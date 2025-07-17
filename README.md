@@ -176,14 +176,54 @@ router.AddDomain(domain)
 ### Domain Matching
 
 Domains are matched against the `Host` header of incoming requests. The matching supports:
+
+#### Basic Domain Matching
 - Exact matches (`example.com`)
 - Wildcard subdomains (`*.example.com`)
 - Multiple patterns per domain
-- Port numbers are automatically stripped for matching
 
-Example with port handling:
+#### Port Matching
+- **No port in pattern**: Matches any port on that host
+  ```go
+  domain := router.NewDomain("example.com")  // Matches example.com, example.com:8080, example.com:3000, etc.
+  ```
+
+- **Exact port**: Requires exact port match
+  ```go
+  domain := router.NewDomain("example.com:8080")  // Only matches example.com:8080
+  ```
+
+- **Wildcard port**: Matches any port on that host
+  ```go
+  domain := router.NewDomain("example.com:*")  // Matches example.com with any port
+  ```
+
+- **IPv4 and IPv6 support**:
+  ```go
+  // IPv4 with port
+  ipv4Domain := router.NewDomain("127.0.0.1:8080")  // Matches 127.0.0.1:8080
+  
+  // IPv6 with port (note the square brackets)
+  ipv6Domain := router.NewDomain("[::1]:8080")  // Matches [::1]:8080
+  ```
+
+#### Examples
+
 ```go
-domain := router.NewDomain("example.com")  // Will match example.com:8080 and example.com:3000
+// Match any port on example.com
+anyPort := router.NewDomain("example.com")
+
+// Match only port 8080
+exactPort := router.NewDomain("example.com:8080")
+
+// Match any subdomain on any port
+wildcardSubdomain := router.NewDomain("*.example.com:*")
+
+// Match localhost on any port
+localhost := router.NewDomain("localhost:*")
+
+// Match IPv6 localhost on port 3000
+ipv6Localhost := router.NewDomain("[::1]:3000")
 ```
 
 ### Middleware on Domains

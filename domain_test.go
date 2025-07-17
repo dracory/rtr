@@ -138,6 +138,7 @@ func TestDomain_Match(t *testing.T) {
 		host     string
 		expected bool
 	}{
+		// Basic domain matching
 		{
 			name:     "exact match",
 			dPattern: "example.com",
@@ -168,6 +169,62 @@ func TestDomain_Match(t *testing.T) {
 			host:     "example.com",
 			expected: false,
 		},
+
+		// Port matching tests
+		{
+			name:     "domain with port matches any port when no port in pattern",
+			dPattern: "example.com",
+			host:     "example.com:8080",
+			expected: true,
+		},
+		{
+			name:     "exact port match",
+			dPattern: "example.com:8080",
+			host:     "example.com:8080",
+			expected: true,
+		},
+		{
+			name:     "port mismatch",
+			dPattern: "example.com:8080",
+			host:     "example.com:8081",
+			expected: false,
+		},
+		{
+			name:     "wildcard port matches any port",
+			dPattern: "example.com:*",
+			host:     "example.com:8080",
+			expected: true,
+		},
+		{
+			name:     "wildcard port with subdomain",
+			dPattern: "*.example.com:*",
+			host:     "api.example.com:8080",
+			expected: true,
+		},
+		{
+			name:     "IPv4 with port",
+			dPattern: "127.0.0.1:8080",
+			host:     "127.0.0.1:8080",
+			expected: true,
+		},
+		{
+			name:     "IPv6 with port",
+			dPattern: "[::1]:8080",
+			host:     "[::1]:8080",
+			expected: true,
+		},
+		{
+			name:     "IPv6 with different port",
+			dPattern: "[::1]:8080",
+			host:     "[::1]:8081",
+			expected: false,
+		},
+		{
+			name:     "IPv6 with wildcard port",
+			dPattern: "[::1]:*",
+			host:     "[::1]:8080",
+			expected: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -182,9 +239,76 @@ func TestDomain_Match(t *testing.T) {
 }
 
 func TestDomain_Match_WithPort(t *testing.T) {
-	d := router.NewDomain("example.com")
-	if !d.Match("example.com:8080") {
-		t.Error("expected match for domain with port")
+	tests := []struct {
+		name     string
+		dPattern string
+		host     string
+		expected bool
+	}{
+		{
+			name:     "domain without port matches any port",
+			dPattern: "example.com",
+			host:     "example.com:8080",
+			expected: true,
+		},
+		{
+			name:     "domain with specific port matches exact port",
+			dPattern: "example.com:3000",
+			host:     "example.com:3000",
+			expected: true,
+		},
+		{
+			name:     "domain with specific port doesn't match different port",
+			dPattern: "example.com:3000",
+			host:     "example.com:3001",
+			expected: false,
+		},
+		{
+			name:     "domain with wildcard port matches any port",
+			dPattern: "example.com:*",
+			host:     "example.com:8080",
+			expected: true,
+		},
+		{
+			name:     "multiple patterns with different ports",
+			dPattern: "example.com:8080,example.com:8081,example.com:8082",
+			host:     "example.com:8081",
+			expected: true,
+		},
+		{
+			name:     "multiple patterns with wildcard port",
+			dPattern: "example.com:8080,example.com:*,example.com:8082",
+			host:     "example.com:9999",
+			expected: true,
+		},
+		{
+			name:     "multiple patterns with no match",
+			dPattern: "example.com:8080,example.com:8081",
+			host:     "example.com:9999",
+			expected: false,
+		},
+		{
+			name:     "multiple domains with different ports",
+			dPattern: "api.example.com:8080,admin.example.com:8081",
+			host:     "admin.example.com:8081",
+			expected: true,
+		},
+		{
+			name:     "multiple domains with port mismatch",
+			dPattern: "api.example.com:8080,admin.example.com:8081",
+			host:     "api.example.com:8081",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := router.NewDomain(tt.dPattern)
+			got := d.Match(tt.host)
+			if got != tt.expected {
+				t.Errorf("Match(%q) with pattern %q = %v, want %v", tt.host, tt.dPattern, got, tt.expected)
+			}
+		})
 	}
 }
 

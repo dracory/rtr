@@ -93,13 +93,29 @@ func (d *domainImpl) GetAfterMiddlewares() []Middleware {
 }
 
 // Match checks if the given host matches any of this domain's patterns
+// The host can include a port (e.g., "example.com:8080"), and patterns can optionally specify ports.
+// Port matching rules:
+// - If pattern includes a port (e.g., "example.com:8080"), it must match exactly
+// - Use "*" as port in pattern (e.g., "example.com:*") to match any port
+// - If pattern has no port, it matches any port for that host
 func (d *domainImpl) Match(host string) bool {
 	if host == "" {
 		return false
 	}
 
-	// Remove port if present
-	host = strings.Split(host, ":")[0]
+	// Handle IPv6 addresses which use square brackets for addresses with ports (e.g., [::1]:8080)
+	if strings.HasPrefix(host, "[") {
+		// Extract IPv6 address and port if present
+		if closeBracket := strings.Index(host, "]"); closeBracket != -1 {
+			if len(host) > closeBracket+1 && host[closeBracket+1] == ':' {
+				// Has port: [::1]:8080
+				host = host[1:closeBracket] + ":" + host[closeBracket+2:]
+			} else {
+				// No port: [::1]
+				host = host[1:closeBracket]
+			}
+		}
+	}
 
 	for _, pattern := range d.patterns {
 		if d.matchesPattern(host, pattern) {
@@ -111,17 +127,28 @@ func (d *domainImpl) Match(host string) bool {
 
 // matchesPattern checks if the host matches the given pattern
 func (d *domainImpl) matchesPattern(host, pattern string) bool {
-	// Exact match
-	if host == pattern {
+	// Split pattern into host and port parts
+	patternHost, patternPort, _ := strings.Cut(pattern, ":")
+	hostName, hostPort, _ := strings.Cut(host, ":")
+
+	// If pattern specifies a port, it must match exactly (or be a wildcard)
+	if patternPort != "" {
+		if patternPort != "*" && patternPort != hostPort {
+			return false
+		}
+	}
+
+	// Exact host match
+	if patternHost == hostName {
 		return true
 	}
 
 	// Wildcard subdomain (e.g., "*.example.com")
-	if strings.HasPrefix(pattern, "*.") {
-		pattern = strings.TrimPrefix(pattern, "*.")
+	if strings.HasPrefix(patternHost, "*.") {
+		patternHost = strings.TrimPrefix(patternHost, "*.") 
 		// Only match if host ends with .pattern (e.g., "sub.example.com" matches "*.example.com")
 		// But don't match if host is exactly the pattern (e.g., "example.com" should not match "*.example.com")
-		return strings.HasSuffix(host, "."+pattern)
+		return strings.HasSuffix(hostName, "."+patternHost)
 	}
 
 	return false
