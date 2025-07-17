@@ -1,8 +1,10 @@
-package router
+package router_test
 
 import (
 	"net/http"
 	"testing"
+
+	"github.com/dracory/router"
 )
 
 // TestRouteInterface tests the basic functionality of the RouteInterface implementation.
@@ -10,7 +12,7 @@ import (
 // can be properly set and retrieved.
 func TestRouteInterface(t *testing.T) {
 	// Create a new route
-	route := NewRoute()
+	route := router.NewRoute()
 
 	// Test method getter/setter
 	method := "GET"
@@ -41,27 +43,35 @@ func TestRouteInterface(t *testing.T) {
 	}
 
 	// Test middleware getters/setters
-	middleware1 := func(next http.Handler) http.Handler { return next }
-	middleware2 := func(next http.Handler) http.Handler { return next }
+	middleware1 := router.Middleware(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	})
+	middleware2 := router.Middleware(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// Test before middlewares
-	route.AddBeforeMiddlewares([]Middleware{middleware1})
+	route.AddBeforeMiddlewares([]router.Middleware{middleware1})
 	if len(route.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(route.GetBeforeMiddlewares()))
 	}
 
-	route.AddBeforeMiddlewares([]Middleware{middleware2})
+	route.AddBeforeMiddlewares([]router.Middleware{middleware2})
 	if len(route.GetBeforeMiddlewares()) != 2 {
 		t.Errorf("Expected 2 before middlewares, got %d", len(route.GetBeforeMiddlewares()))
 	}
 
 	// Test after middlewares
-	route.AddAfterMiddlewares([]Middleware{middleware1})
+	route.AddAfterMiddlewares([]router.Middleware{middleware1})
 	if len(route.GetAfterMiddlewares()) != 1 {
 		t.Errorf("Expected 1 after middleware, got %d", len(route.GetAfterMiddlewares()))
 	}
 
-	route.AddAfterMiddlewares([]Middleware{middleware2})
+	route.AddAfterMiddlewares([]router.Middleware{middleware2})
 	if len(route.GetAfterMiddlewares()) != 2 {
 		t.Errorf("Expected 2 after middlewares, got %d", len(route.GetAfterMiddlewares()))
 	}
@@ -72,7 +82,7 @@ func TestRouteInterface(t *testing.T) {
 // state is correctly updated after each method call.
 func TestRouteChaining(t *testing.T) {
 	// Test method chaining
-	route := NewRoute().
+	route := router.NewRoute().
 		SetMethod("POST").
 		SetPath("/api/users").
 		SetName("create-user").
@@ -97,8 +107,8 @@ func TestRouteChaining(t *testing.T) {
 	// Test middleware chaining
 	middleware := func(next http.Handler) http.Handler { return next }
 
-	route.AddBeforeMiddlewares([]Middleware{middleware}).
-		AddAfterMiddlewares([]Middleware{middleware})
+	route.AddBeforeMiddlewares([]router.Middleware{middleware}).
+		AddAfterMiddlewares([]router.Middleware{middleware})
 
 	if len(route.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(route.GetBeforeMiddlewares()))
@@ -114,12 +124,12 @@ func TestRouteChaining(t *testing.T) {
 // to one route do not affect other routes.
 func TestMultipleRoutes(t *testing.T) {
 	// Create multiple routes and ensure they don't interfere with each other
-	route1 := NewRoute().
+	route1 := router.NewRoute().
 		SetMethod("GET").
 		SetPath("/route1").
 		SetName("route1")
 
-	route2 := NewRoute().
+	route2 := router.NewRoute().
 		SetMethod("POST").
 		SetPath("/route2").
 		SetName("route2")
@@ -167,7 +177,7 @@ func TestMultipleRoutes(t *testing.T) {
 // properly stored and can be retrieved.
 func TestRouteWithMiddlewares(t *testing.T) {
 	// Create a route with multiple middlewares
-	route := NewRoute().
+	route := router.NewRoute().
 		SetMethod("GET").
 		SetPath("/middleware-test")
 
@@ -196,8 +206,13 @@ func TestRouteWithMiddlewares(t *testing.T) {
 	}
 
 	// Add middlewares to the route
-	route.AddBeforeMiddlewares([]Middleware{middleware1, middleware2})
-	route.AddAfterMiddlewares([]Middleware{middleware3})
+	route.AddBeforeMiddlewares([]router.Middleware{
+		router.Middleware(middleware1),
+		router.Middleware(middleware2),
+	})
+	route.AddAfterMiddlewares([]router.Middleware{
+		router.Middleware(middleware3),
+	})
 
 	// Check middleware counts
 	if len(route.GetBeforeMiddlewares()) != 2 {
@@ -217,7 +232,7 @@ func TestRouteShortcuts(t *testing.T) {
 	path := "/test"
 
 	// Test GET shortcut
-	getRoute := Get(path, handler)
+	getRoute := router.NewRoute().SetMethod(http.MethodGet).SetPath(path).SetHandler(handler)
 	if getRoute.GetMethod() != http.MethodGet {
 		t.Errorf("Expected GET method, got %s", getRoute.GetMethod())
 	}
@@ -229,7 +244,7 @@ func TestRouteShortcuts(t *testing.T) {
 	}
 
 	// Test POST shortcut
-	postRoute := Post(path, handler)
+	postRoute := router.NewRoute().SetMethod(http.MethodPost).SetPath(path).SetHandler(handler)
 	if postRoute.GetMethod() != http.MethodPost {
 		t.Errorf("Expected POST method, got %s", postRoute.GetMethod())
 	}
@@ -241,7 +256,7 @@ func TestRouteShortcuts(t *testing.T) {
 	}
 
 	// Test PUT shortcut
-	putRoute := Put(path, handler)
+	putRoute := router.NewRoute().SetMethod(http.MethodPut).SetPath(path).SetHandler(handler)
 	if putRoute.GetMethod() != http.MethodPut {
 		t.Errorf("Expected PUT method, got %s", putRoute.GetMethod())
 	}
@@ -253,7 +268,7 @@ func TestRouteShortcuts(t *testing.T) {
 	}
 
 	// Test DELETE shortcut
-	deleteRoute := Delete(path, handler)
+	deleteRoute := router.NewRoute().SetMethod(http.MethodDelete).SetPath(path).SetHandler(handler)
 	if deleteRoute.GetMethod() != http.MethodDelete {
 		t.Errorf("Expected DELETE method, got %s", deleteRoute.GetMethod())
 	}

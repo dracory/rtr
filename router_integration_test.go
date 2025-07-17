@@ -1,4 +1,4 @@
-package router
+package router_test
 
 import (
 	"database/sql"
@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/dracory/router"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -36,10 +38,10 @@ func TestRouterWithDatabase(t *testing.T) {
 	}
 
 	// Create a router
-	router := NewRouter()
+	r := router.NewRouter()
 
 	// Add a route that uses the database
-	route := NewRoute().
+	route := router.NewRoute().
 		SetMethod("GET").
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +67,7 @@ func TestRouterWithDatabase(t *testing.T) {
 
 			fmt.Fprint(w, response)
 		})
-	router.AddRoute(route)
+	r.AddRoute(route)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/users", nil)
@@ -77,7 +79,7 @@ func TestRouterWithDatabase(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Serve the request
-	router.ServeHTTP(rr, req)
+	r.ServeHTTP(rr, req)
 
 	// Check the status code
 	if status := rr.Code; status != http.StatusOK {
@@ -116,7 +118,7 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 	}
 
 	// Create a router
-	router := NewRouter()
+	r := router.NewRouter()
 
 	// Create a middleware that adds the database connection to the request context
 	dbMiddleware := func(next http.Handler) http.Handler {
@@ -128,10 +130,10 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	router.AddBeforeMiddlewares([]Middleware{dbMiddleware})
+	r.AddBeforeMiddlewares([]router.Middleware{dbMiddleware})
 
 	// Add a route that uses the database from the middleware
-	route := NewRoute().
+	route := router.NewRoute().
 		SetMethod("GET").
 		SetPath("/items").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +159,7 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 
 			fmt.Fprint(w, response)
 		})
-	router.AddRoute(route)
+	r.AddRoute(route)
 
 	// Create a test request
 	req, err := http.NewRequest("GET", "/items", nil)
@@ -169,7 +171,7 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Serve the request
-	router.ServeHTTP(rr, req)
+	r.ServeHTTP(rr, req)
 
 	// Check the status code
 	if status := rr.Code; status != http.StatusOK {
@@ -213,13 +215,13 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 	}
 
 	// Create a router
-	router := NewRouter()
+	r := router.NewRouter()
 
 	// Create a group for product-related routes
-	productGroup := NewGroup().SetPrefix("/products")
+	productGroup := router.NewGroup().SetPrefix("/products")
 
 	// Add routes to the group
-	productGroup.AddRoute(NewRoute().SetMethod("GET").SetPath("").SetHandler(func(w http.ResponseWriter, r *http.Request) {
+	productGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath("").SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		// List all products
 		rows, err := db.Query("SELECT id, name, price FROM products")
 		if err != nil {
@@ -243,7 +245,7 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 		fmt.Fprint(w, response)
 	}))
 
-	productGroup.AddRoute(NewRoute().SetMethod("GET").SetPath("/total").SetHandler(func(w http.ResponseWriter, r *http.Request) {
+	productGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath("/total").SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		// Calculate total price of all products
 		var total float64
 		err := db.QueryRow("SELECT SUM(price) FROM products").Scan(&total)
@@ -256,7 +258,7 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 	}))
 
 	// Add the group to the router
-	router.AddGroup(productGroup)
+	r.AddGroup(productGroup)
 
 	// Test the list products route
 	req1, err := http.NewRequest("GET", "/products", nil)
@@ -265,7 +267,7 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 	}
 
 	rr1 := httptest.NewRecorder()
-	router.ServeHTTP(rr1, req1)
+	r.ServeHTTP(rr1, req1)
 
 	if status := rr1.Code; status != http.StatusOK {
 		t.Errorf("list handler returned wrong status code: got %v want %v", status, http.StatusOK)
@@ -283,7 +285,7 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 	}
 
 	rr2 := httptest.NewRecorder()
-	router.ServeHTTP(rr2, req2)
+	r.ServeHTTP(rr2, req2)
 
 	if status := rr2.Code; status != http.StatusOK {
 		t.Errorf("total handler returned wrong status code: got %v want %v", status, http.StatusOK)
