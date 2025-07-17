@@ -2,6 +2,13 @@
 
 A flexible and feature-rich HTTP router implementation for Go applications that supports route grouping, middleware chains, and nested routing structures.
 
+<img src="https://opengraph.githubassets.com/5b92c81c05d64a82c3fb4ba95739403a2d38cbad61f260a0701b3366b3d10327/dracory/router" width="300" />
+
+[![Tests Status](https://github.com/dracory/router/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/router/actions/workflows/tests.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dracory/router)](https://goreportcard.com/report/github.com/dracory/router)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/router)](https://pkg.go.dev/github.com/dracory/router)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 ## Features
 
 - **Route Management**: Define and manage HTTP routes with support for all standard HTTP methods using exact path matching
