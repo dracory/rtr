@@ -8,8 +8,8 @@ This example demonstrates the basic usage of the Dracory HTTP Router package.
 - Adding routes with shortcut methods
 - Creating route groups
 - Nested route groups
-- Path parameters
 - Basic request handling
+- Exact path matching
 
 ## Running the Example
 
@@ -30,7 +30,7 @@ This example demonstrates the basic usage of the Dracory HTTP Router package.
 - `GET /hello` - Simple hello world endpoint
 - `GET /api/status` - API status check
 - `GET /api/users` - List users
-- `GET /api/users/:id` - Get user by ID
+- `GET /api/users/123` - Get specific user (exact match required)
 
 ## Code Structure
 
@@ -39,4 +39,4 @@ The example shows:
 2. Basic route definition
 3. Route grouping
 4. Nested routes
-5. Path parameter handling
+5. Exact path matching

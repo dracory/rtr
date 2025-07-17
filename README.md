@@ -4,7 +4,7 @@ A flexible and feature-rich HTTP router implementation for Go applications that 
 
 ## Features
 
-- **Route Management**: Define and manage HTTP routes with support for all standard HTTP methods
+- **Route Management**: Define and manage HTTP routes with support for all standard HTTP methods using exact path matching
 - **Route Groups**: Group related routes with shared prefixes and middleware
 - **Middleware Support**: 
   - Pre-route (before) middleware
@@ -30,10 +30,10 @@ Individual route definitions that specify HTTP method, path, and handler.
 
 ```go
 // Using shortcut methods
-route := router.Get("/users", handleUsers)
-route := router.Post("/users", createUser)
-route := router.Put("/users/:id", updateUser)
-route := router.Delete("/users/:id", deleteUser)
+route := router.Get("/users", handleUsers)      // Exact match: /users
+route := router.Post("/users", createUser)     // Exact match: /users
+route := router.Put("/users/123", updateUser)  // Exact match required: /users/123
+route := router.Delete("/users/123", deleteUser) // Exact match required: /users/123
 
 // Using method chaining
 route := router.NewRoute()
@@ -107,6 +107,13 @@ route.AddBeforeMiddlewares([]router.Middleware{
 })
 ```
 
+## Path Matching
+
+This router uses **exact path matching**:
+- Paths must match exactly as defined
+- No built-in path parameters (e.g., `/users/:id`)
+- No automatic trailing slash redirection
+
 ## Interfaces
 
 ### RouterInterface
@@ -157,9 +164,14 @@ The package includes comprehensive test coverage:
 - `router_integration_test.go`: Integration tests
 - `route_test.go`: Route-specific tests
 - `group_test.go`: Group functionality tests
+- `examples/basic/`: Complete example with tests
 
 Run tests using:
 
 ```bash
-go test ./router/...
-``` 
+# From the root directory
+go test .
+
+# Or to run all tests including examples
+go test ./...
+```
