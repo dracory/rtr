@@ -2,7 +2,6 @@ package rtr
 
 import (
 	"net/http"
-	"strings"
 )
 
 // AddDomain adds a domain to this router and returns the router for method chaining
@@ -24,9 +23,6 @@ func (r *routerImpl) GetDomains() []DomainInterface {
 
 // findMatchingDomain finds the first domain that matches the given host
 func (r *routerImpl) findMatchingDomain(host string) DomainInterface {
-	// Remove port if present
-	host = strings.Split(host, ":")[0]
-
 	for _, domain := range r.domains {
 		if domain.Match(host) {
 			return domain

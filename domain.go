@@ -103,23 +103,14 @@ func (d *domainImpl) Match(host string) bool {
 		return false
 	}
 
-	// Handle IPv6 addresses which use square brackets for addresses with ports (e.g., [::1]:8080)
-	if strings.HasPrefix(host, "[") {
-		// Extract IPv6 address and port if present
-		if closeBracket := strings.Index(host, "]"); closeBracket != -1 {
-			if len(host) > closeBracket+1 && host[closeBracket+1] == ':' {
-				// Has port: [::1]:8080
-				host = host[1:closeBracket] + ":" + host[closeBracket+2:]
-			} else {
-				// No port: [::1]
-				host = host[1:closeBracket]
-			}
-		}
-	}
-
+	// Handle multiple patterns (comma-separated)
 	for _, pattern := range d.patterns {
-		if d.matchesPattern(host, pattern) {
-			return true
+		// Check each individual pattern in the comma-separated list
+		for _, singlePattern := range strings.Split(pattern, ",") {
+			singlePattern = strings.TrimSpace(singlePattern)
+			if d.matchesPattern(host, singlePattern) {
+				return true
+			}
 		}
 	}
 	return false
@@ -127,28 +118,65 @@ func (d *domainImpl) Match(host string) bool {
 
 // matchesPattern checks if the host matches the given pattern
 func (d *domainImpl) matchesPattern(host, pattern string) bool {
-	// Split pattern into host and port parts
-	patternHost, patternPort, _ := strings.Cut(pattern, ":")
-	hostName, hostPort, _ := strings.Cut(host, ":")
+	// Handle IPv6 addresses with ports (e.g., [::1]:8080)
+	var hostName, hostPort string
+	if strings.HasPrefix(host, "[") {
+		// IPv6 address with port: [::1]:8080
+		if closeBracket := strings.Index(host, "]"); closeBracket != -1 {
+			hostName = host[:closeBracket+1] // Keep the brackets for IPv6
+			if len(host) > closeBracket+1 && host[closeBracket+1] == ':' {
+				hostPort = host[closeBracket+2:]
+			}
+		}
+	} else {
+		// Regular domain or IPv4 with port
+		hostName, hostPort, _ = strings.Cut(host, ":")
+	}
+
+	// Handle pattern (which might be an IPv6 address with port)
+	var patternHost, patternPort string
+	if strings.HasPrefix(pattern, "[") {
+		// IPv6 pattern: [::1]:8080 or [::1]:*
+		if closeBracket := strings.Index(pattern, "]"); closeBracket != -1 {
+			patternHost = pattern[:closeBracket+1] // Keep the brackets for IPv6
+			if len(pattern) > closeBracket+1 && pattern[closeBracket+1] == ':' {
+				patternPort = pattern[closeBracket+2:]
+			}
+		}
+	} else {
+		// Regular pattern: example.com:8080 or example.com:*
+		patternHost, patternPort, _ = strings.Cut(pattern, ":")
+	}
 
 	// If pattern specifies a port, it must match exactly (or be a wildcard)
 	if patternPort != "" {
+		// If host doesn't have a port but pattern requires one, no match
+		if hostPort == "" {
+			return false
+		}
+		// If pattern port is not a wildcard and doesn't match host port, no match
 		if patternPort != "*" && patternPort != hostPort {
 			return false
 		}
 	}
 
-	// Exact host match
+	// Handle IPv6 pattern matching
+	if strings.HasPrefix(patternHost, "[") && strings.HasSuffix(patternHost, "]") {
+		// For IPv6, the entire address must match exactly
+		return patternHost == hostName
+	}
+
+	// Handle exact host match (for both IPv4 and regular domains)
 	if patternHost == hostName {
 		return true
 	}
 
-	// Wildcard subdomain (e.g., "*.example.com")
+	// Handle wildcard subdomains (e.g., "*.example.com")
 	if strings.HasPrefix(patternHost, "*.") {
-		patternHost = strings.TrimPrefix(patternHost, "*.") 
-		// Only match if host ends with .pattern (e.g., "sub.example.com" matches "*.example.com")
-		// But don't match if host is exactly the pattern (e.g., "example.com" should not match "*.example.com")
-		return strings.HasSuffix(hostName, "."+patternHost)
+		patternHost = strings.TrimPrefix(patternHost, "*.") // Remove the wildcard prefix
+		// Only match if host ends with .pattern and has at least one dot
+		// This ensures "example.com" doesn't match "*.example.com"
+		return strings.Contains(hostName, ".") && strings.HasSuffix(hostName, "."+patternHost)
 	}
 
 	return false
