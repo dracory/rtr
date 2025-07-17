@@ -17,9 +17,46 @@ A flexible and feature-rich HTTP router implementation for Go applications that 
   - Pre-route (before) middleware
   - Post-route (after) middleware
   - Support at router, group, and individual route levels
+  - Built-in panic recovery middleware
 - **Nested Groups**: Create hierarchical route structures with nested groups
 - **Flexible API**: Chainable methods for intuitive route and group configuration
 - **Standard Interface**: Implements `http.Handler` interface for seamless integration
+
+## Middleware
+
+### Built-in Middleware
+
+#### Recovery Middleware
+The router includes a built-in recovery middleware that catches panics in your handlers and returns a 500 Internal Server Error response instead of crashing the server. This middleware is added by default when you create a new router with `NewRouter()`.
+
+```go
+// This is automatically added when you create a new router
+router := router.NewRouter()
+
+// But you can also add it manually if needed
+router.AddBeforeMiddlewares([]router.Middleware{router.RecoveryMiddleware})
+```
+
+#### Custom Middleware
+You can create your own middleware by implementing the `Middleware` type:
+
+```go
+func myMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Do something before the handler runs
+        log.Println("Before handler")
+        
+        // Call the next handler
+        next.ServeHTTP(w, r)
+        
+        // Do something after the handler runs
+        log.Println("After handler")
+    })
+}
+
+// Add it to your router
+router.AddBeforeMiddlewares([]router.Middleware{myMiddleware})
+```
 
 ## Core Components
 

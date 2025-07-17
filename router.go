@@ -14,13 +14,18 @@ type Middleware func(http.Handler) http.Handler
 
 // NewRouter creates and returns a new RouterInterface implementation.
 // This is the main entry point for creating a new router.
+// By default, it includes recovery middleware to handle panics.
 func NewRouter() RouterInterface {
-	return &routerImpl{
+	r := &routerImpl{
 		routes:  make([]RouteInterface, 0),
 		groups:  make([]GroupInterface, 0),
 		domains: make([]DomainInterface, 0),
 		prefix:  "",
 	}
+	
+	// Add recovery middleware by default
+	r.AddBeforeMiddlewares(DefaultMiddlewares())
+	return r
 }
 
 // This is used to create a new route that can be added to a router or group.
