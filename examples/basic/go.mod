@@ -1,9 +1,9 @@
-module github.com/dracory/router/examples/basic
+module github.com/dracory/rtr/examples/basic
 
 go 1.24.0
 
 require (
-	github.com/dracory/router v0.0.0
+	github.com/dracory/rtr v0.1.1
 	github.com/stretchr/testify v1.10.0
 )
 
