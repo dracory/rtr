@@ -1,4 +1,4 @@
-package router_test
+package rtr_test
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dracory/router"
+	"github.com/dracory/rtr"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -38,10 +38,10 @@ func TestRouterWithDatabase(t *testing.T) {
 	}
 
 	// Create a router
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add a route that uses the database
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +118,7 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 	}
 
 	// Create a router
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Create a middleware that adds the database connection to the request context
 	dbMiddleware := func(next http.Handler) http.Handler {
@@ -130,10 +130,10 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddBeforeMiddlewares([]router.Middleware{dbMiddleware})
+	r.AddBeforeMiddlewares([]rtr.Middleware{dbMiddleware})
 
 	// Add a route that uses the database from the middleware
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/items").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -215,13 +215,13 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 	}
 
 	// Create a router
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Create a group for product-related routes
-	productGroup := router.NewGroup().SetPrefix("/products")
+	productGroup := rtr.NewGroup().SetPrefix("/products")
 
 	// Add routes to the group
-	productGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath("").SetHandler(func(w http.ResponseWriter, r *http.Request) {
+	productGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("").SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		// List all products
 		rows, err := db.Query("SELECT id, name, price FROM products")
 		if err != nil {
@@ -245,7 +245,7 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 		fmt.Fprint(w, response)
 	}))
 
-	productGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath("/total").SetHandler(func(w http.ResponseWriter, r *http.Request) {
+	productGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/total").SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		// Calculate total price of all products
 		var total float64
 		err := db.QueryRow("SELECT SUM(price) FROM products").Scan(&total)

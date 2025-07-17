@@ -1,10 +1,10 @@
-package router_test
+package rtr_test
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/dracory/router"
+	"github.com/dracory/rtr"
 )
 
 // TestGroupInterface tests the basic functionality of the GroupInterface implementation.
@@ -12,7 +12,7 @@ import (
 // can be properly set and retrieved.
 func TestGroupInterface(t *testing.T) {
 	// Create a new group
-	group := router.NewGroup()
+	group := rtr.NewGroup()
 
 	// Test prefix getter/setter
 	prefix := "/api"
@@ -22,7 +22,7 @@ func TestGroupInterface(t *testing.T) {
 	}
 
 	// Test routes getter/setter
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/test").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {})
@@ -34,9 +34,9 @@ func TestGroupInterface(t *testing.T) {
 	}
 
 	// Add multiple routes
-	route2 := router.NewRoute().SetMethod("POST").SetPath("/test2")
-	route3 := router.NewRoute().SetMethod("PUT").SetPath("/test3")
-	group.AddRoutes([]router.RouteInterface{route2, route3})
+	route2 := rtr.NewRoute().SetMethod("POST").SetPath("/test2")
+	route3 := rtr.NewRoute().SetMethod("PUT").SetPath("/test3")
+	group.AddRoutes([]rtr.RouteInterface{route2, route3})
 
 	if len(group.GetRoutes()) != 3 {
 		t.Errorf("Expected 3 routes, got %d", len(group.GetRoutes()))
@@ -47,23 +47,23 @@ func TestGroupInterface(t *testing.T) {
 	middleware2 := func(next http.Handler) http.Handler { return next }
 
 	// Test before middlewares
-	group.AddBeforeMiddlewares([]router.Middleware{middleware1})
+	group.AddBeforeMiddlewares([]rtr.Middleware{middleware1})
 	if len(group.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(group.GetBeforeMiddlewares()))
 	}
 
-	group.AddBeforeMiddlewares([]router.Middleware{middleware2})
+	group.AddBeforeMiddlewares([]rtr.Middleware{middleware2})
 	if len(group.GetBeforeMiddlewares()) != 2 {
 		t.Errorf("Expected 2 before middlewares, got %d", len(group.GetBeforeMiddlewares()))
 	}
 
 	// Test after middlewares
-	group.AddAfterMiddlewares([]router.Middleware{middleware1})
+	group.AddAfterMiddlewares([]rtr.Middleware{middleware1})
 	if len(group.GetAfterMiddlewares()) != 1 {
 		t.Errorf("Expected 1 after middleware, got %d", len(group.GetAfterMiddlewares()))
 	}
 
-	group.AddAfterMiddlewares([]router.Middleware{middleware2})
+	group.AddAfterMiddlewares([]rtr.Middleware{middleware2})
 	if len(group.GetAfterMiddlewares()) != 2 {
 		t.Errorf("Expected 2 after middlewares, got %d", len(group.GetAfterMiddlewares()))
 	}
@@ -74,9 +74,9 @@ func TestGroupInterface(t *testing.T) {
 // state is correctly updated after each method call.
 func TestGroupChaining(t *testing.T) {
 	// Test method chaining
-	route := router.NewRoute().SetMethod("GET").SetPath("/users")
+	route := rtr.NewRoute().SetMethod("GET").SetPath("/users")
 
-	group := router.NewGroup().
+	group := rtr.NewGroup().
 		SetPrefix("/api").
 		AddRoute(route)
 
@@ -91,8 +91,8 @@ func TestGroupChaining(t *testing.T) {
 	// Test middleware chaining
 	middleware := func(next http.Handler) http.Handler { return next }
 
-	group.AddBeforeMiddlewares([]router.Middleware{middleware}).
-		AddAfterMiddlewares([]router.Middleware{middleware})
+	group.AddBeforeMiddlewares([]rtr.Middleware{middleware}).
+		AddAfterMiddlewares([]rtr.Middleware{middleware})
 
 	if len(group.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(group.GetBeforeMiddlewares()))
@@ -108,15 +108,15 @@ func TestGroupChaining(t *testing.T) {
 // groups can be properly accessed and manipulated.
 func TestNestedGroups(t *testing.T) {
 	// Create parent group
-	parentGroup := router.NewGroup().SetPrefix("/api")
+	parentGroup := rtr.NewGroup().SetPrefix("/api")
 
 	// Create child groups
-	childGroup1 := router.NewGroup().SetPrefix("/v1")
-	childGroup2 := router.NewGroup().SetPrefix("/v2")
+	childGroup1 := rtr.NewGroup().SetPrefix("/v1")
+	childGroup2 := rtr.NewGroup().SetPrefix("/v2")
 
 	// Add routes to child groups
-	childGroup1.AddRoute(router.NewRoute().SetMethod("GET").SetPath("/users"))
-	childGroup2.AddRoute(router.NewRoute().SetMethod("GET").SetPath("/products"))
+	childGroup1.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/users"))
+	childGroup2.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/products"))
 
 	// Add child groups to parent group
 	parentGroup.AddGroup(childGroup1)
@@ -124,7 +124,7 @@ func TestNestedGroups(t *testing.T) {
 		t.Errorf("Expected 1 group, got %d", len(parentGroup.GetGroups()))
 	}
 
-	parentGroup.AddGroups([]router.GroupInterface{childGroup2})
+	parentGroup.AddGroups([]rtr.GroupInterface{childGroup2})
 	if len(parentGroup.GetGroups()) != 2 {
 		t.Errorf("Expected 2 groups, got %d", len(parentGroup.GetGroups()))
 	}
@@ -155,7 +155,7 @@ func TestNestedGroups(t *testing.T) {
 // properly stored and can be retrieved.
 func TestGroupWithMiddlewares(t *testing.T) {
 	// Create a group with multiple middlewares
-	group := router.NewGroup().SetPrefix("/api")
+	group := rtr.NewGroup().SetPrefix("/api")
 
 	// Create middlewares that modify a counter
 	counter := 0
@@ -182,8 +182,8 @@ func TestGroupWithMiddlewares(t *testing.T) {
 	}
 
 	// Add middlewares to the group
-	group.AddBeforeMiddlewares([]router.Middleware{middleware1, middleware2})
-	group.AddAfterMiddlewares([]router.Middleware{middleware3})
+	group.AddBeforeMiddlewares([]rtr.Middleware{middleware1, middleware2})
+	group.AddAfterMiddlewares([]rtr.Middleware{middleware3})
 
 	// Check middleware counts
 	if len(group.GetBeforeMiddlewares()) != 2 {
@@ -202,23 +202,23 @@ func TestComplexGroupStructure(t *testing.T) {
 	// Create a complex group structure with nested groups and routes
 
 	// Main group
-	apiGroup := router.NewGroup().SetPrefix("/api")
+	apiGroup := rtr.NewGroup().SetPrefix("/api")
 
 	// Version groups
-	v1Group := router.NewGroup().SetPrefix("/v1")
-	v2Group := router.NewGroup().SetPrefix("/v2")
+	v1Group := rtr.NewGroup().SetPrefix("/v1")
+	v2Group := rtr.NewGroup().SetPrefix("/v2")
 
 	// Resource groups
-	usersGroup := router.NewGroup().SetPrefix("/users")
-	productsGroup := router.NewGroup().SetPrefix("/products")
+	usersGroup := rtr.NewGroup().SetPrefix("/users")
+	productsGroup := rtr.NewGroup().SetPrefix("/products")
 
 	// Add routes to resource groups
-	usersGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath(""))
-	usersGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath("/:id"))
-	usersGroup.AddRoute(router.NewRoute().SetMethod("POST").SetPath(""))
+	usersGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath(""))
+	usersGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/:id"))
+	usersGroup.AddRoute(rtr.NewRoute().SetMethod("POST").SetPath(""))
 
-	productsGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath(""))
-	productsGroup.AddRoute(router.NewRoute().SetMethod("GET").SetPath("/:id"))
+	productsGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath(""))
+	productsGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/:id"))
 
 	// Add resource groups to version groups
 	v1Group.AddGroup(usersGroup)
@@ -279,17 +279,17 @@ func TestComplexGroupStructure(t *testing.T) {
 // and that the routes can be properly accessed and verified.
 func TestGroupWithDatabaseIntegration(t *testing.T) {
 	// Create a group for database-related routes
-	dbGroup := router.NewGroup().SetPrefix("/db")
+	dbGroup := rtr.NewGroup().SetPrefix("/db")
 
 	// Add routes for database operations
-	dbGroup.AddRoute(router.NewRoute().
+	dbGroup.AddRoute(rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/query").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			// In a real test, this would query a database
 		}))
 
-	dbGroup.AddRoute(router.NewRoute().
+	dbGroup.AddRoute(rtr.NewRoute().
 		SetMethod("POST").
 		SetPath("/execute").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {

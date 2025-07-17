@@ -1,11 +1,11 @@
-package router_test
+package rtr_test
 
 import (
 	"net/http"
 	"reflect"
 	"testing"
 
-	"github.com/dracory/router"
+	"github.com/dracory/rtr"
 )
 
 func TestNewDomain(t *testing.T) {
@@ -33,7 +33,7 @@ func TestNewDomain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := router.NewDomain(tt.patterns...)
+			d := rtr.NewDomain(tt.patterns...)
 			got := d.GetPatterns()
 			if !reflect.DeepEqual(got, tt.expected) {
 				t.Errorf("GetPatterns() = %v, want %v", got, tt.expected)
@@ -43,8 +43,8 @@ func TestNewDomain(t *testing.T) {
 }
 
 func TestDomain_AddRoute(t *testing.T) {
-	d := router.NewDomain("example.com")
-	r := router.NewRoute().SetPath("/test")
+	d := rtr.NewDomain("example.com")
+	r := rtr.NewRoute().SetPath("/test")
 	d.AddRoute(r)
 
 	routes := d.GetRoutes()
@@ -57,10 +57,10 @@ func TestDomain_AddRoute(t *testing.T) {
 }
 
 func TestDomain_AddRoutes(t *testing.T) {
-	d := router.NewDomain("example.com")
-	r1 := router.NewRoute().SetPath("/test1")
-	r2 := router.NewRoute().SetPath("/test2")
-	d.AddRoutes([]router.RouteInterface{r1, r2})
+	d := rtr.NewDomain("example.com")
+	r1 := rtr.NewRoute().SetPath("/test1")
+	r2 := rtr.NewRoute().SetPath("/test2")
+	d.AddRoutes([]rtr.RouteInterface{r1, r2})
 
 	routes := d.GetRoutes()
 	if len(routes) != 2 {
@@ -75,8 +75,8 @@ func TestDomain_AddRoutes(t *testing.T) {
 }
 
 func TestDomain_AddGroup(t *testing.T) {
-	d := router.NewDomain("example.com")
-	g := router.NewGroup().SetPrefix("/api")
+	d := rtr.NewDomain("example.com")
+	g := rtr.NewGroup().SetPrefix("/api")
 	d.AddGroup(g)
 
 	groups := d.GetGroups()
@@ -89,10 +89,10 @@ func TestDomain_AddGroup(t *testing.T) {
 }
 
 func TestDomain_AddGroups(t *testing.T) {
-	d := router.NewDomain("example.com")
-	g1 := router.NewGroup().SetPrefix("/api")
-	g2 := router.NewGroup().SetPrefix("/v1")
-	d.AddGroups([]router.GroupInterface{g1, g2})
+	d := rtr.NewDomain("example.com")
+	g1 := rtr.NewGroup().SetPrefix("/api")
+	g2 := rtr.NewGroup().SetPrefix("/v1")
+	d.AddGroups([]rtr.GroupInterface{g1, g2})
 
 	groups := d.GetGroups()
 	if len(groups) != 2 {
@@ -107,7 +107,7 @@ func TestDomain_AddGroups(t *testing.T) {
 }
 
 func TestDomain_Middleware(t *testing.T) {
-	d := router.NewDomain("example.com")
+	d := rtr.NewDomain("example.com")
 
 	// Test before middlewares
 	mw1 := func(next http.Handler) http.Handler {
@@ -117,14 +117,14 @@ func TestDomain_Middleware(t *testing.T) {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	}
 
-	d.AddBeforeMiddlewares([]router.Middleware{mw1, mw2})
+	d.AddBeforeMiddlewares([]rtr.Middleware{mw1, mw2})
 	beforeMiddlewares := d.GetBeforeMiddlewares()
 	if len(beforeMiddlewares) != 2 {
 		t.Errorf("expected 2 before middlewares, got %d", len(beforeMiddlewares))
 	}
 
 	// Test after middlewares
-	d.AddAfterMiddlewares([]router.Middleware{mw1})
+	d.AddAfterMiddlewares([]rtr.Middleware{mw1})
 	afterMiddlewares := d.GetAfterMiddlewares()
 	if len(afterMiddlewares) != 1 {
 		t.Errorf("expected 1 after middleware, got %d", len(afterMiddlewares))
@@ -229,7 +229,7 @@ func TestDomain_Match(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := router.NewDomain(tt.dPattern)
+			d := rtr.NewDomain(tt.dPattern)
 			got := d.Match(tt.host)
 			if got != tt.expected {
 				t.Errorf("Match(%q) = %v, want %v", tt.host, got, tt.expected)
@@ -303,7 +303,7 @@ func TestDomain_Match_WithPort(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := router.NewDomain(tt.dPattern)
+			d := rtr.NewDomain(tt.dPattern)
 			got := d.Match(tt.host)
 			if got != tt.expected {
 				t.Errorf("Match(%q) with pattern %q = %v, want %v", tt.host, tt.dPattern, got, tt.expected)
@@ -321,18 +321,18 @@ type testRoute struct {
 func (r *testRoute) GetPath() string { return r.path }
 
 // Implement other required RouteInterface methods with empty implementations
-func (r *testRoute) GetMethod() string                                       { return "" }
-func (r *testRoute) SetMethod(method string) router.RouteInterface           { return r }
-func (r *testRoute) SetPath(path string) router.RouteInterface               { r.path = path; return r }
-func (r *testRoute) GetHandler() router.Handler                              { return nil }
-func (r *testRoute) SetHandler(handler router.Handler) router.RouteInterface { return r }
-func (r *testRoute) GetName() string                                         { return "" }
-func (r *testRoute) SetName(name string) router.RouteInterface               { return r }
-func (r *testRoute) AddBeforeMiddlewares(middleware []router.Middleware) router.RouteInterface {
+func (r *testRoute) GetMethod() string                                 { return "" }
+func (r *testRoute) SetMethod(method string) rtr.RouteInterface        { return r }
+func (r *testRoute) SetPath(path string) rtr.RouteInterface            { r.path = path; return r }
+func (r *testRoute) GetHandler() rtr.Handler                           { return nil }
+func (r *testRoute) SetHandler(handler rtr.Handler) rtr.RouteInterface { return r }
+func (r *testRoute) GetName() string                                   { return "" }
+func (r *testRoute) SetName(name string) rtr.RouteInterface            { return r }
+func (r *testRoute) AddBeforeMiddlewares(middleware []rtr.Middleware) rtr.RouteInterface {
 	return r
 }
-func (r *testRoute) GetBeforeMiddlewares() []router.Middleware { return nil }
-func (r *testRoute) AddAfterMiddlewares(middleware []router.Middleware) router.RouteInterface {
+func (r *testRoute) GetBeforeMiddlewares() []rtr.Middleware { return nil }
+func (r *testRoute) AddAfterMiddlewares(middleware []rtr.Middleware) rtr.RouteInterface {
 	return r
 }
-func (r *testRoute) GetAfterMiddlewares() []router.Middleware { return nil }
+func (r *testRoute) GetAfterMiddlewares() []rtr.Middleware { return nil }

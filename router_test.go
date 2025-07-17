@@ -1,4 +1,4 @@
-package router_test
+package rtr_test
 
 import (
 	"fmt"
@@ -6,17 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dracory/router"
+	"github.com/dracory/rtr"
 )
 
 // TestRouterBasicRouting tests the basic routing functionality of the Router.
 // It verifies that a simple route can be added and that requests to that route
 // are properly handled and return the expected response.
 func TestRouterBasicRouting(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add a simple route
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -52,10 +52,10 @@ func TestRouterBasicRouting(t *testing.T) {
 // with a method that is not allowed for a given path. It verifies that the router
 // returns the appropriate status code (404 Not Found in this implementation).
 func TestRouterMethodNotAllowed(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add a route that only accepts GET
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -85,10 +85,10 @@ func TestRouterMethodNotAllowed(t *testing.T) {
 // TestRouterNotFound tests the router's behavior when a request is made to a path
 // that does not exist. It verifies that the router returns a 404 Not Found status code.
 func TestRouterNotFound(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add a route
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -118,10 +118,10 @@ func TestRouterNotFound(t *testing.T) {
 // when a prefix is set on the router, all routes are properly prefixed and
 // requests to the prefixed paths are correctly handled.
 func TestRouterWithPrefix(t *testing.T) {
-	r := router.NewRouter().SetPrefix("/api")
+	r := rtr.NewRouter().SetPrefix("/api")
 
 	// Add a route
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -157,13 +157,13 @@ func TestRouterWithPrefix(t *testing.T) {
 // routes can be added to a group and that the group's prefix is properly applied
 // to all routes within the group.
 func TestRouterWithGroup(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Create a group
-	group := router.NewGroup().SetPrefix("/api")
+	group := rtr.NewGroup().SetPrefix("/api")
 
 	// Add a route to the group
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -202,16 +202,16 @@ func TestRouterWithGroup(t *testing.T) {
 // that groups can be nested within other groups and that the prefixes are properly
 // combined to form the full path for routes within nested groups.
 func TestRouterWithNestedGroups(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Create parent group
-	parentGroup := router.NewGroup().SetPrefix("/api")
+	parentGroup := rtr.NewGroup().SetPrefix("/api")
 
 	// Create child group
-	childGroup := router.NewGroup().SetPrefix("/v1")
+	childGroup := rtr.NewGroup().SetPrefix("/v1")
 
 	// Add a route to the child group
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +253,7 @@ func TestRouterWithNestedGroups(t *testing.T) {
 // It verifies that middleware added to the router is executed before the route handler
 // and that it can modify the request or response as needed.
 func TestRouterWithBeforeMiddleware(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add a middleware that adds a header
 	headerMiddleware := func(next http.Handler) http.Handler {
@@ -264,10 +264,10 @@ func TestRouterWithBeforeMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddBeforeMiddlewares([]router.Middleware{headerMiddleware})
+	r.AddBeforeMiddlewares([]rtr.Middleware{headerMiddleware})
 
 	// Add a route
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -308,7 +308,7 @@ func TestRouterWithBeforeMiddleware(t *testing.T) {
 // It verifies that middleware added to the router is executed after the route handler
 // and that it can modify the response as needed.
 func TestRouterWithAfterMiddleware(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add a middleware that modifies the response
 	responseMiddleware := func(next http.Handler) http.Handler {
@@ -321,10 +321,10 @@ func TestRouterWithAfterMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddAfterMiddlewares([]router.Middleware{responseMiddleware})
+	r.AddAfterMiddlewares([]rtr.Middleware{responseMiddleware})
 
 	// Add a route
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -365,10 +365,10 @@ func TestRouterWithAfterMiddleware(t *testing.T) {
 // It verifies that middleware can be added to a specific route and that it is executed
 // only for requests to that route.
 func TestRouterWithRouteMiddleware(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Create a route with middleware
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -376,13 +376,13 @@ func TestRouterWithRouteMiddleware(t *testing.T) {
 		})
 
 	// Add middleware to the route
-	routeMiddleware := func(next http.Handler) http.Handler {
+	routeMiddleware := rtr.Middleware(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-Route", "route-value")
 			next.ServeHTTP(w, r)
 		})
-	}
-	route.AddBeforeMiddlewares([]router.Middleware{routeMiddleware})
+	})
+	route.AddBeforeMiddlewares([]rtr.Middleware{routeMiddleware})
 
 	// Add the route to the router
 	r.AddRoute(route)
@@ -420,10 +420,10 @@ func TestRouterWithRouteMiddleware(t *testing.T) {
 // It verifies that middleware can be added to a group and that it is executed for
 // all requests to routes within that group.
 func TestRouterWithGroupMiddleware(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Create a group with middleware
-	group := router.NewGroup().SetPrefix("/api")
+	group := rtr.NewGroup().SetPrefix("/api")
 
 	// Add middleware to the group
 	groupMiddleware := func(next http.Handler) http.Handler {
@@ -432,10 +432,10 @@ func TestRouterWithGroupMiddleware(t *testing.T) {
 			next.ServeHTTP(w, r)
 		})
 	}
-	group.AddBeforeMiddlewares([]router.Middleware{groupMiddleware})
+	group.AddBeforeMiddlewares([]rtr.Middleware{groupMiddleware})
 
 	// Add a route to the group
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -478,7 +478,7 @@ func TestRouterWithGroupMiddleware(t *testing.T) {
 // TestRouterStaticFiles tests the router's static file serving functionality.
 // It verifies that the router can serve static files from a specified directory.
 func TestRouterStaticFiles(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Set up a static file server
 	// Note: In a real test, you'd use a temporary directory with actual files
@@ -492,7 +492,7 @@ func TestRouterStaticFiles(t *testing.T) {
 		fileServer.ServeHTTP(w, r)
 	}
 
-	route := router.NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/static/*").
 		SetHandler(handler)
@@ -521,52 +521,52 @@ func TestRouterStaticFiles(t *testing.T) {
 // It verifies that the router can handle requests with different HTTP methods
 // and that the appropriate handler is called for each method.
 func TestRouterHTTPMethods(t *testing.T) {
-	r := router.NewRouter()
+	r := rtr.NewRouter()
 
 	// Add routes for different HTTP methods
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "GET method")
 		}))
 
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("POST").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "POST method")
 		}))
 
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("PUT").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "PUT method")
 		}))
 
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("DELETE").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "DELETE method")
 		}))
 
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("PATCH").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "PATCH method")
 		}))
 
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("HEAD").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-	r.AddRoute(router.NewRoute().
+	r.AddRoute(rtr.NewRoute().
 		SetMethod("OPTIONS").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {

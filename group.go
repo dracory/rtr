@@ -1,4 +1,4 @@
-package router
+package rtr
 
 // groupImpl implements the GroupInterface
 // It represents a group of routes that share common properties such as a URL prefix and middleware.

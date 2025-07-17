@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dracory/router"
+	"github.com/dracory/rtr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -104,33 +104,33 @@ func TestRouterMethodNotAllowed(t *testing.T) {
 }
 
 // setupTestRouter creates a router instance with test routes
-func setupTestRouter() router.RouterInterface {
-	r := router.NewRouter()
+func setupTestRouter() rtr.RouterInterface {
+	r := rtr.NewRouter()
 
 	// Add a simple route
-	r.AddRoute(router.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+	r.AddRoute(rtr.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello, World!"))
 	}))
 
 	// Create an API group
-	api := router.NewGroup().SetPrefix("/api")
+	api := rtr.NewGroup().SetPrefix("/api")
 
 	// Add routes to the API group
-	api.AddRoute(router.Get("/status", func(w http.ResponseWriter, r *http.Request) {
+	api.AddRoute(rtr.Get("/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status": "ok"}`))
 	}))
 
 	// Create a users group with nested routes
-	users := router.NewGroup().SetPrefix("/users")
+	users := rtr.NewGroup().SetPrefix("/users")
 
 	// Add user routes
-	users.AddRoute(router.Get("", func(w http.ResponseWriter, r *http.Request) {
+	users.AddRoute(rtr.Get("", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("List of users"))
 	}))
 
 	// Example of a specific user route (exact match required)
-	users.AddRoute(router.Get("/123", func(w http.ResponseWriter, r *http.Request) {
+	users.AddRoute(rtr.Get("/123", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("User ID: 123"))
 	}))
 

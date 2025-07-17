@@ -1,4 +1,4 @@
-module github.com/dracory/router
+module github.com/dracory/rtr
 
 go 1.24.0
 
