@@ -3,10 +3,10 @@ package main_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/dracory/rtr"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRouterEndpoints(t *testing.T) {
@@ -67,8 +67,12 @@ func TestRouterEndpoints(t *testing.T) {
 			rr := httptest.NewRecorder()
 			r.ServeHTTP(rr, req)
 
-			assert.Equal(t, tt.expectedStatus, rr.Code)
-			assert.Contains(t, rr.Body.String(), tt.expectedBody)
+			if rr.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, rr.Code)
+			}
+			if !strings.Contains(rr.Body.String(), tt.expectedBody) {
+				t.Errorf("expected body to contain %q, got %q", tt.expectedBody, rr.Body.String())
+			}
 		})
 	}
 }
@@ -98,7 +102,9 @@ func TestRouterMethodNotAllowed(t *testing.T) {
 
 			// The current implementation returns 404 for non-matching methods
 			// This could be updated to return 405 Method Not Allowed in the future
-			assert.Equal(t, http.StatusNotFound, rr.Code)
+			if rr.Code != http.StatusNotFound {
+				t.Errorf("expected status %d, got %d", http.StatusNotFound, rr.Code)
+			}
 		})
 	}
 }
