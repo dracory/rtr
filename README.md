@@ -121,6 +121,90 @@ This router uses **exact path matching**:
 - No built-in path parameters (e.g., `/users/:id`)
 - No automatic trailing slash redirection
 
+## Domain-based Routing
+
+The router supports domain-based routing, allowing you to define routes that only match specific domain names or patterns.
+
+### Creating a Domain
+
+```go
+// Create a domain with exact match
+domain := router.NewDomain("example.com")
+
+// Create a domain with wildcard subdomain matching
+wildcardDomain := router.NewDomain("*.example.com")
+
+// Create a domain that matches multiple patterns
+multiDomain := router.NewDomain("example.com", "api.example.com", "*.example.org")
+```
+
+### Adding Routes to a Domain
+
+```go
+// Create a new domain
+domain := router.NewDomain("api.example.com")
+
+// Add routes directly to the domain
+domain.AddRoute(router.Get("/users", handleUsers))
+
+// Add multiple routes at once
+domain.AddRoutes([]router.RouteInterface{
+    router.Get("/users", handleUsers),
+    router.Post("/users", createUser),
+})
+```
+
+### Adding Groups to a Domain
+
+```go
+// Create a domain
+domain := router.NewDomain("api.example.com")
+
+// Create an API group
+apiGroup := router.NewGroup().SetPrefix("/v1")
+
+// Add routes to the group
+apiGroup.AddRoute(router.Get("/products", handleProducts))
+
+// Add the group to the domain
+domain.AddGroup(apiGroup)
+
+// Add the domain to the router
+router.AddDomain(domain)
+```
+
+### Domain Matching
+
+Domains are matched against the `Host` header of incoming requests. The matching supports:
+- Exact matches (`example.com`)
+- Wildcard subdomains (`*.example.com`)
+- Multiple patterns per domain
+- Port numbers are automatically stripped for matching
+
+Example with port handling:
+```go
+domain := router.NewDomain("example.com")  // Will match example.com:8080 and example.com:3000
+```
+
+### Middleware on Domains
+
+Middleware can be added at the domain level to apply to all routes within that domain:
+
+```go
+domain := router.NewDomain("admin.example.com")
+
+// Add middleware that will run before all routes in this domain
+domain.AddBeforeMiddlewares([]router.Middleware{
+    adminAuthMiddleware,
+    loggingMiddleware,
+})
+
+// Add middleware that will run after all routes in this domain
+domain.AddAfterMiddlewares([]router.Middleware{
+    responseTimeMiddleware,
+})
+```
+
 ## Interfaces
 
 ### RouterInterface
