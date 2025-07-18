@@ -151,12 +151,67 @@ route.AddBeforeMiddlewares([]router.Middleware{
 })
 ```
 
-## Path Matching
+## Path Parameters
 
-This router uses **exact path matching**:
-- Paths must match exactly as defined
-- No built-in path parameters (e.g., `/users/:id`)
-- No automatic trailing slash redirection
+The router supports flexible path parameter extraction with the following features:
+
+### Basic Parameters
+Extract values from URL paths using `:param` syntax:
+
+```go
+// Define a route with parameters
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/users/:id").
+    SetHandler(func(w http.ResponseWriter, r *http.Request) {
+        // Get a required parameter
+        id := rtr.MustGetParam(r, "id")
+        
+        // Or safely get an optional parameter
+        if name, exists := rtr.GetParam(r, "name"); exists {
+            // Parameter exists
+        }
+    }))
+```
+
+### Optional Parameters
+Mark parameters as optional with `?`:
+
+```go
+// Both /articles/tech and /articles/tech/123 will match
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/articles/:category/:id?").
+    SetHandler(handleArticle))
+```
+
+### Wildcard/Catch-all Routes
+Use `*` to match all remaining path segments:
+
+```go
+// Matches /static/js/main.js, /static/css/style.css, etc.
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/static/*filepath").
+    SetHandler(serveStaticFile))
+```
+
+### Getting All Parameters
+Retrieve all path parameters as a map:
+
+```go
+params := rtr.GetParams(r)
+// params is a map[string]string of all path parameters
+```
+
+## Path Matching Rules
+
+The router uses the following matching rules:
+- Paths are matched exactly as defined, with parameter placeholders
+- Required parameters must be present in the request path
+- Optional parameters can be omitted
+- Parameter names must be unique within a route
+- The wildcard parameter must be the last segment in the path
 
 ## Domain-based Routing
 
