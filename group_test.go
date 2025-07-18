@@ -198,6 +198,26 @@ func TestGroupWithMiddlewares(t *testing.T) {
 // TestComplexGroupStructure tests the creation and manipulation of a complex nested group structure.
 // It verifies that groups can be nested at multiple levels and that the structure
 // can be properly traversed and verified.
+// TestGroupImplGetHandler verifies that the GetHandler method of groupImpl returns nil.
+// This test uses type assertion to access the unexported method for test coverage.
+func TestGroupImplGetHandler(t *testing.T) {
+	// Create a new group
+	group := rtr.NewGroup()
+
+	// Use type assertion to access the underlying *groupImpl
+	if gi, ok := group.(interface{ GetHandler() rtr.Handler }); ok {
+		// Get the handler (should be nil for groups)
+		handler := gi.GetHandler()
+
+		// Verify the handler is nil
+		if handler != nil {
+			t.Error("Expected GetHandler() to return nil for groups")
+		}
+	} else {
+		t.Error("Failed to assert group to interface with GetHandler method")
+	}
+}
+
 func TestComplexGroupStructure(t *testing.T) {
 	// Create a complex group structure with nested groups and routes
 
