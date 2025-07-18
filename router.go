@@ -1,6 +1,10 @@
 package rtr
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+	"strings"
+)
 
 // Handler represents the function that handles a request.
 // It is a function type that takes an http.ResponseWriter and an *http.Request as parameters.
@@ -161,12 +165,63 @@ func (r *routerImpl) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	matchedHandler.ServeHTTP(w, req)
 }
 
+// matchParameterizedRoute checks if a parameterized route matches the request path and extracts parameters
+func matchParameterizedRoute(routePath, requestPath string, paramNames []string) (bool, map[string]string) {
+	routeSegments := strings.Split(routePath, "/")
+	requestSegments := strings.Split(requestPath, "/")
+
+	if len(routeSegments) != len(requestSegments) {
+		return false, nil
+	}
+
+	params := make(map[string]string)
+	paramIndex := 0
+
+	for i, routeSeg := range routeSegments {
+		reqSeg := requestSegments[i]
+
+		// Handle parameter segments (starting with ':')
+		if len(routeSeg) > 0 && routeSeg[0] == ':' {
+			// Check if this is an optional parameter
+			isOptional := false
+			paramName := strings.TrimLeft(routeSeg, ":")
+			if strings.HasSuffix(paramName, "?") {
+				isOptional = true
+				paramName = strings.TrimSuffix(paramName, "?")
+			}
+
+			// If the segment is empty and the parameter is optional, skip it
+			if reqSeg == "" && isOptional {
+				continue
+			}
+
+			// If we have more parameter names than expected, something is wrong
+			if paramIndex >= len(paramNames) {
+				return false, nil
+			}
+
+			params[paramNames[paramIndex]] = reqSeg
+			paramIndex++
+		} else if routeSeg != reqSeg {
+			// If it's not a parameter and segments don't match, the route doesn't match
+			return false, nil
+		}
+	}
+
+	return true, params
+}
+
 // findMatchingRoute attempts to find a route that matches the request
 // It returns the matched route and an http.Handler that includes all middlewares
 func (r *routerImpl) findMatchingRoute(req *http.Request) (RouteInterface, http.Handler) {
 	// Check direct routes on the router
 	for _, route := range r.routes {
-		if r.routeMatches(route, req) {
+		if match, params := r.routeMatches(route, req); match {
+			// Add params to request context if any
+			if len(params) > 0 {
+				ctx := context.WithValue(req.Context(), ParamsKey, params)
+				req = req.WithContext(ctx)
+			}
 			return route, r.wrapWithMiddlewares(route, req)
 		}
 	}
@@ -196,9 +251,15 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 			name:              route.GetName(),
 			beforeMiddlewares: route.GetBeforeMiddlewares(),
 			afterMiddlewares:  route.GetAfterMiddlewares(),
+			paramNames:        route.(*routeImpl).paramNames,
 		}
 
-		if r.routeMatches(adjustedRoute, req) {
+		if match, params := r.routeMatches(adjustedRoute, req); match {
+			// Add params to request context if any
+			if len(params) > 0 {
+				ctx := context.WithValue(req.Context(), ParamsKey, params)
+				req = req.WithContext(ctx)
+			}
 			// Create a handler chain with group middlewares and route middlewares
 			return route, r.wrapWithGroupMiddlewares(route, group, req, parentPath)
 		}
@@ -215,10 +276,10 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 }
 
 // routeMatches checks if a route matches the request method and path
-func (r *routerImpl) routeMatches(route RouteInterface, req *http.Request) bool {
+func (r *routerImpl) routeMatches(route RouteInterface, req *http.Request) (bool, map[string]string) {
 	// Check if method matches
 	if route.GetMethod() != req.Method && route.GetMethod() != "" {
-		return false
+		return false, nil
 	}
 
 	routePath := r.prefix + route.GetPath()
@@ -226,25 +287,34 @@ func (r *routerImpl) routeMatches(route RouteInterface, req *http.Request) bool 
 
 	// Handle catch-all routes
 	if routePath == "/*" || routePath == "/**" {
-		return true
+		return true, nil
 	}
 
 	// Handle wildcard patterns at the end of the path
 	if len(routePath) > 2 && routePath[len(routePath)-2:] == "/*" {
 		// Check if the base path matches
 		basePath := routePath[:len(routePath)-2]
-		return len(requestPath) >= len(basePath) && requestPath[:len(basePath)] == basePath
+		if len(requestPath) >= len(basePath) && requestPath[:len(basePath)] == basePath {
+			return true, nil
+		}
+		return false, nil
 	}
 
-	// For regular paths, do exact matching
-	return routePath == requestPath
+	// If no parameters, do exact matching
+	if len(route.(*routeImpl).paramNames) == 0 {
+		return routePath == requestPath, nil
+	}
+
+	// Handle parameterized routes
+	return matchParameterizedRoute(routePath, requestPath, route.(*routeImpl).paramNames)
 }
 
 // wrapWithMiddlewares wraps a route's handler with its middlewares and the router's middlewares
 func (r *routerImpl) wrapWithMiddlewares(route RouteInterface, req *http.Request) http.Handler {
 	// Start with the route's handler
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		route.GetHandler()(w, r)
+		// Use the request from the parameter to preserve the context with parameters
+		route.GetHandler()(w, req)
 	})
 
 	// Apply route's after middlewares (in reverse order)

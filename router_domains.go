@@ -1,6 +1,7 @@
 package rtr
 
 import (
+	"context"
 	"net/http"
 )
 
@@ -35,7 +36,12 @@ func (r *routerImpl) findMatchingDomain(host string) DomainInterface {
 func (r *routerImpl) findMatchingRouteInDomain(domain DomainInterface, req *http.Request) (RouteInterface, http.Handler) {
 	// Check direct routes in domain
 	for _, route := range domain.GetRoutes() {
-		if r.routeMatches(route, req) {
+		if match, params := r.routeMatches(route, req); match {
+			// Add params to request context if any
+			if len(params) > 0 {
+				ctx := context.WithValue(req.Context(), "params", params)
+				req = req.WithContext(ctx)
+			}
 			return route, r.wrapWithDomainMiddlewares(route, domain, req)
 		}
 	}

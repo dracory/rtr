@@ -1,6 +1,9 @@
 package rtr
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 // RouteImpl implements the RouteInterface
 // It represents a single route definition with its associated properties and middleware.
@@ -12,6 +15,12 @@ type routeImpl struct {
 
 	// path specifies the URL path pattern for this route (e.g., "/users", "/api/products")
 	path string
+
+	// paramNames stores the names of path parameters in order of appearance
+	paramNames []string
+
+	// hasOptionalParams indicates if the route contains any optional parameters
+	hasOptionalParams bool
 
 	// handler is the function that will be called when this route is matched
 	handler Handler
@@ -46,11 +55,28 @@ func (r *routeImpl) GetPath() string {
 	return r.path
 }
 
-// SetPath sets the URL path pattern for this route.
+// SetPath sets the URL path pattern for this route and extracts any parameter names.
 // This method supports method chaining by returning the RouteInterface.
-// The path parameter should be a valid URL path pattern.
+// The path parameter should be a valid URL path pattern (e.g., "/users/:id").
 func (r *routeImpl) SetPath(path string) RouteInterface {
 	r.path = path
+	r.paramNames = nil
+	r.hasOptionalParams = false
+
+	// Extract parameter names from the path
+	segments := strings.Split(path, "/")
+	for _, segment := range segments {
+		if len(segment) > 0 && (segment[0] == ':' || (len(segment) > 1 && segment[0] == ':' && segment[1] == '?')) {
+			// Remove the leading ':' and optional '?'
+			paramName := strings.TrimLeft(segment, ":")
+			if strings.HasSuffix(paramName, "?") {
+				paramName = strings.TrimSuffix(paramName, "?")
+				r.hasOptionalParams = true
+			}
+			r.paramNames = append(r.paramNames, paramName)
+		}
+	}
+
 	return r
 }
 
