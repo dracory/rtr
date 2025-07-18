@@ -256,31 +256,51 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 
 	// Check routes in the current group
 	for _, route := range group.GetRoutes() {
-		// Create a copy of the route with adjusted path
-		adjustedRoute := &routeImpl{
-			method:            route.GetMethod(),
-			path:              groupPath + route.GetPath(),
-			handler:           route.GetHandler(),
-			name:              route.GetName(),
-			beforeMiddlewares: route.GetBeforeMiddlewares(),
-			afterMiddlewares:  route.GetAfterMiddlewares(),
-			paramNames:        route.(*routeImpl).paramNames,
+		// Create a full path for matching
+		fullPath := groupPath + route.GetPath()
+		
+		// Create a temporary route for matching
+		tempRoute := &routeImpl{
+			method:     route.GetMethod(),
+			path:       fullPath,
+			handler:    route.GetHandler(),
+			paramNames: route.(*routeImpl).paramNames,
 		}
 
-		if match, params := r.routeMatches(adjustedRoute, req); match {
-			// Add params to request context if any
+		if match, params := r.routeMatches(tempRoute, req); match {
+			// Create a new request with the updated context containing the parameters
 			if len(params) > 0 {
+				// Get existing params from context if any
+				if existingParams, ok := req.Context().Value(ParamsKey).(map[string]string); ok && existingParams != nil {
+					// Merge with existing params
+					for k, v := range params {
+						existingParams[k] = v
+					}
+					params = existingParams
+				}
+				
+				// Create a new request with the updated context
 				ctx := context.WithValue(req.Context(), ParamsKey, params)
 				req = req.WithContext(ctx)
 			}
-			// Create a handler chain with group middlewares and route middlewares
+			
+			// Return the original route (not the temp one) with the wrapped handler
 			return route, r.wrapWithGroupMiddlewares(route, group, req, parentPath)
 		}
 	}
 
 	// Check subgroups
 	for _, subgroup := range group.GetGroups() {
-		if route, handler := r.findMatchingRouteInGroup(subgroup, req, groupPath); route != nil {
+		// Create a new group that includes the current group's middlewares
+		nestedGroup := &groupImpl{
+			prefix:            subgroup.GetPrefix(),
+			routes:            subgroup.GetRoutes(),
+			groups:            subgroup.GetGroups(),
+			beforeMiddlewares: append(group.GetBeforeMiddlewares(), subgroup.GetBeforeMiddlewares()...),
+			afterMiddlewares:  append(group.GetAfterMiddlewares(), subgroup.GetAfterMiddlewares()...),
+		}
+
+		if route, handler := r.findMatchingRouteInGroup(nestedGroup, req, groupPath); route != nil {
 			return route, handler
 		}
 	}
@@ -357,25 +377,12 @@ func (r *routerImpl) wrapWithMiddlewares(route RouteInterface, req *http.Request
 func (r *routerImpl) wrapWithGroupMiddlewares(route RouteInterface, group GroupInterface, req *http.Request, parentPath string) http.Handler {
 	// Start with the route's handler
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		route.GetHandler()(w, r)
+		// Clone the request with the current context to ensure we have the latest parameters
+		req = r.WithContext(req.Context())
+		route.GetHandler()(w, req)
 	})
 
-	// Apply route's after middlewares (in reverse order)
-	for i := len(route.GetAfterMiddlewares()) - 1; i >= 0; i-- {
-		handler = route.GetAfterMiddlewares()[i](handler)
-	}
-
-	// Apply group's after middlewares (in reverse order)
-	for i := len(group.GetAfterMiddlewares()) - 1; i >= 0; i-- {
-		handler = group.GetAfterMiddlewares()[i](handler)
-	}
-
-	// Apply router's after middlewares (in reverse order)
-	for i := len(r.afterMiddlewares) - 1; i >= 0; i-- {
-		handler = r.afterMiddlewares[i](handler)
-	}
-
-	// Apply route's before middlewares
+	// Apply route's before middlewares (innermost to route handler)
 	for _, middleware := range route.GetBeforeMiddlewares() {
 		handler = middleware(handler)
 	}
@@ -385,7 +392,7 @@ func (r *routerImpl) wrapWithGroupMiddlewares(route RouteInterface, group GroupI
 		handler = middleware(handler)
 	}
 
-	// Apply router's before middlewares
+	// Apply router's before middlewares (outermost)
 	for _, middleware := range r.beforeMiddlewares {
 		handler = middleware(handler)
 	}
