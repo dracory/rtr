@@ -170,14 +170,29 @@ func matchParameterizedRoute(routePath, requestPath string, paramNames []string)
 	routeSegments := strings.Split(routePath, "/")
 	requestSegments := strings.Split(requestPath, "/")
 
-	if len(routeSegments) != len(requestSegments) {
+	// If the request has more segments than the route, it can't match
+	if len(requestSegments) > len(routeSegments) {
 		return false, nil
+	}
+
+	// If the request has fewer segments, check if the remaining segments are optional
+	if len(requestSegments) < len(routeSegments) {
+		// Check if all remaining segments are optional parameters
+		for i := len(requestSegments); i < len(routeSegments); i++ {
+			seg := routeSegments[i]
+			if len(seg) == 0 || seg[0] != ':' || !strings.HasSuffix(seg, "?") {
+				return false, nil
+			}
+		}
 	}
 
 	params := make(map[string]string)
 	paramIndex := 0
 
-	for i, routeSeg := range routeSegments {
+	// Only iterate up to the length of the request segments
+	// Any remaining route segments must be optional (checked above)
+	for i := 0; i < len(requestSegments); i++ {
+		routeSeg := routeSegments[i]
 		reqSeg := requestSegments[i]
 
 		// Handle parameter segments (starting with ':')
