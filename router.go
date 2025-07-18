@@ -6,16 +6,6 @@ import (
 	"strings"
 )
 
-// Handler represents the function that handles a request.
-// It is a function type that takes an http.ResponseWriter and an *http.Request as parameters.
-// This is the standard Go HTTP handler function signature.
-type Handler func(http.ResponseWriter, *http.Request)
-
-// Middleware represents a middleware function.
-// It is a function type that takes an http.Handler and returns an http.Handler.
-// Middleware functions can be used to process requests before or after they reach the main handler.
-type Middleware func(http.Handler) http.Handler
-
 // NewRouter creates and returns a new RouterInterface implementation.
 // This is the main entry point for creating a new router.
 // By default, it includes recovery middleware to handle panics.
@@ -258,7 +248,7 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 	for _, route := range group.GetRoutes() {
 		// Create a full path for matching
 		fullPath := groupPath + route.GetPath()
-		
+
 		// Create a temporary route for matching
 		tempRoute := &routeImpl{
 			method:     route.GetMethod(),
@@ -278,12 +268,12 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 					}
 					params = existingParams
 				}
-				
+
 				// Create a new request with the updated context
 				ctx := context.WithValue(req.Context(), ParamsKey, params)
 				req = req.WithContext(ctx)
 			}
-			
+
 			// Return the original route (not the temp one) with the wrapped handler
 			return route, r.wrapWithGroupMiddlewares(route, group, req, parentPath)
 		}

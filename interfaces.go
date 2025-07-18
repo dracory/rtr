@@ -2,6 +2,14 @@ package rtr
 
 import "net/http"
 
+// Handler defines the function signature for HTTP request handlers.
+type Handler func(http.ResponseWriter, *http.Request)
+
+// Middleware represents a middleware function.
+// It is a function type that takes an http.Handler and returns an http.Handler.
+// Middleware functions can be used to process requests before or after they reach the main handler.
+type Middleware func(http.Handler) http.Handler
+
 // RouteInterface defines the interface for a single route definition.
 // A route represents a mapping between an HTTP method, a URL path pattern, and a handler function.
 // Routes can also have associated middleware that will be executed before or after the handler.
