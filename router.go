@@ -26,7 +26,7 @@ func NewRouter() RouterInterface {
 		domains: make([]DomainInterface, 0),
 		prefix:  "",
 	}
-	
+
 	// Add recovery middleware by default
 	r.AddBeforeMiddlewares(DefaultMiddlewares())
 	return r
@@ -169,14 +169,16 @@ func (r *routerImpl) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func matchParameterizedRoute(routePath, requestPath string, paramNames []string) (bool, map[string]string) {
 	routeSegments := strings.Split(routePath, "/")
 	requestSegments := strings.Split(requestPath, "/")
+	hasMoreSegments := len(requestSegments) > len(routeSegments)
+	hasLessSegments := len(requestSegments) < len(routeSegments)
 
 	// If the request has more segments than the route, it can't match
-	if len(requestSegments) > len(routeSegments) {
+	if hasMoreSegments {
 		return false, nil
 	}
 
 	// If the request has fewer segments, check if the remaining segments are optional
-	if len(requestSegments) < len(routeSegments) {
+	if hasLessSegments {
 		// Check if all remaining segments are optional parameters
 		for i := len(requestSegments); i < len(routeSegments); i++ {
 			seg := routeSegments[i]
@@ -189,33 +191,29 @@ func matchParameterizedRoute(routePath, requestPath string, paramNames []string)
 	params := make(map[string]string)
 	paramIndex := 0
 
-	// Only iterate up to the length of the request segments
+	// Iterate over request segments using range
 	// Any remaining route segments must be optional (checked above)
-	for i := 0; i < len(requestSegments); i++ {
+	for i, reqSeg := range requestSegments {
 		routeSeg := routeSegments[i]
-		reqSeg := requestSegments[i]
 
 		// Handle parameter segments (starting with ':')
 		if len(routeSeg) > 0 && routeSeg[0] == ':' {
-			// Check if this is an optional parameter
-			isOptional := false
+			// Get the parameter name and check if it's optional
 			paramName := strings.TrimLeft(routeSeg, ":")
-			if strings.HasSuffix(paramName, "?") {
-				isOptional = true
-				paramName = strings.TrimSuffix(paramName, "?")
-			}
+			isOptional := strings.HasSuffix(paramName, "?")
 
 			// If the segment is empty and the parameter is optional, skip it
 			if reqSeg == "" && isOptional {
 				continue
 			}
 
-			// If we have more parameter names than expected, something is wrong
-			if paramIndex >= len(paramNames) {
-				return false, nil
+			// Clean up the parameter name if it was optional
+			if isOptional {
+				paramName = strings.TrimSuffix(paramName, "?")
 			}
 
-			params[paramNames[paramIndex]] = reqSeg
+			// Store the parameter value with its name
+			params[paramName] = reqSeg
 			paramIndex++
 		} else if routeSeg != reqSeg {
 			// If it's not a parameter and segments don't match, the route doesn't match
