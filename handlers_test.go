@@ -1,13 +1,15 @@
-package rtr
+package rtr_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/dracory/rtr"
 )
 
 func TestHTMLHandler(t *testing.T) {
-	route := GetHTML("/test", func(w http.ResponseWriter, r *http.Request) string {
+	route := rtr.GetHTML("/test", func(w http.ResponseWriter, r *http.Request) string {
 		return "<h1>Test HTML</h1>"
 	})
 
@@ -37,7 +39,7 @@ func TestHTMLHandler(t *testing.T) {
 }
 
 func TestJSONHandler(t *testing.T) {
-	route := GetJSON("/api/test", func(w http.ResponseWriter, r *http.Request) string {
+	route := rtr.GetJSON("/api/test", func(w http.ResponseWriter, r *http.Request) string {
 		return `{"message": "test"}`
 	})
 
@@ -67,7 +69,7 @@ func TestJSONHandler(t *testing.T) {
 }
 
 func TestCSSHandler(t *testing.T) {
-	route := GetCSS("/styles.css", func(w http.ResponseWriter, r *http.Request) string {
+	route := rtr.GetCSS("/styles.css", func(w http.ResponseWriter, r *http.Request) string {
 		return "body { color: red; }"
 	})
 
@@ -97,7 +99,7 @@ func TestCSSHandler(t *testing.T) {
 }
 
 func TestXMLHandler(t *testing.T) {
-	route := GetXML("/data.xml", func(w http.ResponseWriter, r *http.Request) string {
+	route := rtr.GetXML("/data.xml", func(w http.ResponseWriter, r *http.Request) string {
 		return `<?xml version="1.0"?><root><item>test</item></root>`
 	})
 
@@ -128,7 +130,7 @@ func TestXMLHandler(t *testing.T) {
 }
 
 func TestTextHandler(t *testing.T) {
-	route := GetText("/robots.txt", func(w http.ResponseWriter, r *http.Request) string {
+	route := rtr.GetText("/robots.txt", func(w http.ResponseWriter, r *http.Request) string {
 		return "User-agent: *\nDisallow: /"
 	})
 
@@ -160,7 +162,7 @@ func TestTextHandler(t *testing.T) {
 
 func TestHandlerPriority(t *testing.T) {
 	// Test that Handler takes priority over HTMLHandler
-	route := NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/test").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +190,7 @@ func TestHandlerPriority(t *testing.T) {
 
 func TestHTMLHandlerPriorityOverJSON(t *testing.T) {
 	// Test that HTMLHandler takes priority over JSONHandler
-	route := NewRoute().
+	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/test").
 		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
@@ -220,7 +222,7 @@ func TestHTMLHandlerPriorityOverJSON(t *testing.T) {
 }
 
 func TestNoHandlerReturnsNil(t *testing.T) {
-	route := NewRoute().SetMethod("GET").SetPath("/test")
+	route := rtr.NewRoute().SetMethod("GET").SetPath("/test")
 
 	handler := route.GetHandler()
 	if handler != nil {
@@ -237,31 +239,31 @@ func TestResponseHelpers(t *testing.T) {
 	}{
 		{
 			name:         "HTMLResponse",
-			responseFunc: HTMLResponse,
+			responseFunc: rtr.HTMLResponse,
 			body:         "<h1>Test</h1>",
 			expectedCT:   "text/html; charset=utf-8",
 		},
 		{
 			name:         "JSONResponse",
-			responseFunc: JSONResponse,
+			responseFunc: rtr.JSONResponse,
 			body:         `{"test": true}`,
 			expectedCT:   "application/json",
 		},
 		{
 			name:         "CSSResponse",
-			responseFunc: CSSResponse,
+			responseFunc: rtr.CSSResponse,
 			body:         "body { color: red; }",
 			expectedCT:   "text/css",
 		},
 		{
 			name:         "XMLResponse",
-			responseFunc: XMLResponse,
+			responseFunc: rtr.XMLResponse,
 			body:         `<?xml version="1.0"?><root/>`,
 			expectedCT:   "application/xml",
 		},
 		{
 			name:         "TextResponse",
-			responseFunc: TextResponse,
+			responseFunc: rtr.TextResponse,
 			body:         "Plain text",
 			expectedCT:   "text/plain; charset=utf-8",
 		},
@@ -293,7 +295,7 @@ func TestHTMLResponsePreservesExistingContentType(t *testing.T) {
 	// Set a custom Content-Type before calling HTMLResponse
 	w.Header().Set("Content-Type", "text/html; charset=iso-8859-1")
 
-	HTMLResponse(w, req, "<h1>Test</h1>")
+	rtr.HTMLResponse(w, req, "<h1>Test</h1>")
 
 	contentType := w.Header().Get("Content-Type")
 	if contentType != "text/html; charset=iso-8859-1" {
@@ -304,24 +306,24 @@ func TestHTMLResponsePreservesExistingContentType(t *testing.T) {
 func TestToHandlerHelpers(t *testing.T) {
 	tests := []struct {
 		name         string
-		handlerFunc  func() Handler
+		handlerFunc  func() rtr.Handler
 		expectedBody string
 		expectedCT   string
 	}{
 		{
 			name: "ToHandler simple string",
-			handlerFunc: func() Handler {
-				return ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+			handlerFunc: func() rtr.Handler {
+				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 					return "<h1>HTML Test</h1>"
 				})
 			},
 			expectedBody: "<h1>HTML Test</h1>",
-			expectedCT:   "", // No automatic headers
+			expectedCT:   "text/html; charset=utf-8", // Go automatically detects HTML content
 		},
 		{
 			name: "ToHandler with manual headers",
-			handlerFunc: func() Handler {
-				return ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+			handlerFunc: func() rtr.Handler {
+				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 					w.Header().Set("Content-Type", "application/json")
 					return `{"test": "json"}`
 				})
@@ -331,13 +333,13 @@ func TestToHandlerHelpers(t *testing.T) {
 		},
 		{
 			name: "ToHandler plain text",
-			handlerFunc: func() Handler {
-				return ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+			handlerFunc: func() rtr.Handler {
+				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 					return "Plain text content"
 				})
 			},
 			expectedBody: "Plain text content",
-			expectedCT:   "", // No automatic headers
+			expectedCT:   "text/plain; charset=utf-8", // Go automatically detects plain text content
 		},
 	}
 

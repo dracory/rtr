@@ -39,7 +39,7 @@ func (r *routerImpl) listMiddlewares() {
 		tableMiddleware.AppendHeader(table.Row{"#", "Middleware Name", "Type"})
 		
 		for index, middleware := range beforeMiddlewares {
-			name := getMiddlewareName(middleware)
+			name := GetMiddlewareName(middleware)
 			tableMiddleware.AppendRow(table.Row{index + 1, name, "Before"})
 		}
 		
@@ -55,7 +55,7 @@ func (r *routerImpl) listMiddlewares() {
 		tableMiddleware.AppendHeader(table.Row{"#", "Middleware Name", "Type"})
 		
 		for index, middleware := range afterMiddlewares {
-			name := getMiddlewareName(middleware)
+			name := GetMiddlewareName(middleware)
 			tableMiddleware.AppendRow(table.Row{index + 1, name, "After"})
 		}
 		
@@ -91,7 +91,7 @@ func (r *routerImpl) listDomains() {
 				name = "unnamed"
 			}
 			
-			middlewareNames := getRouteMiddlewareNames(route)
+			middlewareNames := GetRouteMiddlewareNames(route)
 			tableDomain.AppendRow(table.Row{index + 1, path, method, name, middlewareNames})
 		}
 		
@@ -132,7 +132,7 @@ func (r *routerImpl) listRoutes() {
 			name = "unnamed"
 		}
 		
-		middlewareNames := getRouteMiddlewareNames(route)
+		middlewareNames := GetRouteMiddlewareNames(route)
 		tableRoutes.AppendRow(table.Row{index + 1, path, method, name, middlewareNames})
 	}
 	
@@ -194,8 +194,8 @@ func (r *routerImpl) addGroupRoutesToTable(t table.Writer, group GroupInterface,
 	}
 }
 
-// getMiddlewareName attempts to get a readable name for a middleware function
-func getMiddlewareName(middleware Middleware) string {
+// GetMiddlewareName attempts to get a readable name for a middleware function
+func GetMiddlewareName(middleware Middleware) string {
 	if middleware == nil {
 		return "nil"
 	}
@@ -227,19 +227,19 @@ func getMiddlewareName(middleware Middleware) string {
 	return "unnamed"
 }
 
-// getRouteMiddlewareNames gets middleware names for a route
-func getRouteMiddlewareNames(route RouteInterface) []string {
+// GetRouteMiddlewareNames gets middleware names for a route
+func GetRouteMiddlewareNames(route RouteInterface) []string {
 	var names []string
 	
 	// Before middlewares
 	for _, middleware := range route.GetBeforeMiddlewares() {
-		name := getMiddlewareName(middleware)
+		name := GetMiddlewareName(middleware)
 		names = append(names, name+" (before)")
 	}
 	
 	// After middlewares
 	for _, middleware := range route.GetAfterMiddlewares() {
-		name := getMiddlewareName(middleware)
+		name := GetMiddlewareName(middleware)
 		names = append(names, name+" (after)")
 	}
 	
@@ -256,25 +256,25 @@ func getCombinedMiddlewareNames(group GroupInterface, route RouteInterface) []st
 	
 	// Group before middlewares
 	for _, middleware := range group.GetBeforeMiddlewares() {
-		name := getMiddlewareName(middleware)
+		name := GetMiddlewareName(middleware)
 		names = append(names, name+" (group-before)")
 	}
 	
 	// Route before middlewares
 	for _, middleware := range route.GetBeforeMiddlewares() {
-		name := getMiddlewareName(middleware)
+		name := GetMiddlewareName(middleware)
 		names = append(names, name+" (route-before)")
 	}
 	
 	// Route after middlewares
 	for _, middleware := range route.GetAfterMiddlewares() {
-		name := getMiddlewareName(middleware)
+		name := GetMiddlewareName(middleware)
 		names = append(names, name+" (route-after)")
 	}
 	
 	// Group after middlewares
 	for _, middleware := range group.GetAfterMiddlewares() {
-		name := getMiddlewareName(middleware)
+		name := GetMiddlewareName(middleware)
 		names = append(names, name+" (group-after)")
 	}
 	
