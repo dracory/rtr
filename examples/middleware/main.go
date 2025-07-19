@@ -17,7 +17,7 @@ func main() {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-			
+
 			fmt.Printf("Auth middleware '%s' executed for %s\n", "User Authentication", r.URL.Path)
 			next.ServeHTTP(w, r)
 		})
@@ -35,12 +35,12 @@ func main() {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			
+
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
 				return
 			}
-			
+
 			fmt.Printf("CORS middleware '%s' executed\n", "CORS Handler")
 			next.ServeHTTP(w, r)
 		})
@@ -106,25 +106,22 @@ func main() {
 	router.AddRoute(publicRoute)
 	router.AddRoute(adminRoute)
 
-	// Example 4: Using RouteConfig with named middleware (declarative approach)
-	configRoute := &rtr.RouteConfig{
-		Name:   "Config Route",
-		Method: "GET",
-		Path:   "/api/config",
-		JSONHandler: func(w http.ResponseWriter, r *http.Request) string {
-			return `{"config": "loaded", "version": "1.0"}`
-		},
-	}
-
-	// Add named middleware to config route
-	configRoute.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-		rtr.NewMiddleware("Config Validator", func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				fmt.Printf("Config validation middleware executed\n")
-				next.ServeHTTP(w, r)
-			})
-		}),
-	})
+	// Example 4: Using Route with middleware (imperative approach)
+	configRoute := rtr.NewRoute().
+		SetName("Config Route").
+		SetMethod("GET").
+		SetPath("/api/config").
+		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+			rtr.NewMiddleware("Config Validator", func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					fmt.Printf("Config validation middleware executed\n")
+					next.ServeHTTP(w, r)
+				})
+			}),
+		}).
+		SetJSONHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return `{"status":"ok","message":"Config loaded"}`
+		})
 
 	router.AddRoute(configRoute)
 
@@ -160,11 +157,11 @@ func main() {
 
 	// Display route information with their named middleware
 	fmt.Println("Routes with Named Middleware:")
-	fmt.Printf("- %s: %d named before middlewares\n", 
+	fmt.Printf("- %s: %d named before middlewares\n",
 		protectedRoute.GetName(), len(protectedRoute.GetBeforeMiddlewares()))
-	fmt.Printf("- %s: %d named before middlewares\n", 
+	fmt.Printf("- %s: %d named before middlewares\n",
 		adminRoute.GetName(), len(adminRoute.GetBeforeMiddlewares()))
-	fmt.Printf("- %s: %d named before middlewares\n", 
+	fmt.Printf("- %s: %d named before middlewares\n",
 		configRoute.GetName(), len(configRoute.GetBeforeMiddlewares()))
 	fmt.Println()
 

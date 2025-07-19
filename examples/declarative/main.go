@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -11,344 +10,385 @@ import (
 )
 
 func main() {
-	// Example 1: Pure Declarative Approach
-	fmt.Println("=== Pure Declarative Router ===")
-	declarativeRouter := CreateDeclarativeRouter()
-	declarativeRouter.List()
-
-	// Example 2: Hybrid Approach (Declarative + Imperative)
-	fmt.Println("\n=== Hybrid Router (Declarative + Imperative) ===")
-	hybridRouter := CreateHybridRouter()
-	hybridRouter.List()
-
-	// Example 3: Converting Imperative to Declarative
-	fmt.Println("\n=== Imperative Router ===")
-	imperativeRouter := CreateImperativeRouter()
-	imperativeRouter.List()
-
-	// Start server with the declarative router
-	port := ":8080"
-	fmt.Printf("\nServer running on http://localhost%s\n", port)
-	fmt.Println("Try these endpoints:")
-	fmt.Println("\n=== Main Endpoints ===")
-	fmt.Println("  GET  /                    - Home page")
-	fmt.Println("  GET  /health              - Health check")
-	fmt.Println("  GET  /error               - Error demo")
-	fmt.Println("\n=== API Endpoints ===")
-	fmt.Println("  GET  /api/users           - List users (requires auth header)")
-	fmt.Println("  POST /api/users           - Create user (requires auth header)")
-	fmt.Println("  GET  /api/v1/products     - List products v1")
-	fmt.Println("  GET  /api/v2/products     - List products v2")
-	fmt.Println("\n=== Admin Endpoints (Host: admin.example.com) ===")
-	fmt.Println("  GET  /                    - Admin dashboard")
-	fmt.Println("  GET  /api/stats           - System stats")
-	fmt.Println("  GET  /api/users           - User stats")
-	fmt.Println("\n=== Testing Commands ===")
-	fmt.Println("  curl http://localhost:8080/")
-	fmt.Println("  curl -H 'Authorization: Bearer token' http://localhost:8080/api/users")
-	fmt.Println("  curl -H 'Host: admin.example.com' http://localhost:8080/")
-	fmt.Println("  curl -H 'Accept: text/html' -H 'Host: admin.example.com' http://localhost:8080/")
+	// Example: Pure Declarative Configuration
+	fmt.Println("=== Declarative Routing System Example ===")
+	domain := CreateDeclarativeConfiguration()
 	
-	log.Fatal(http.ListenAndServe(port, declarativeRouter))
+	// Display the configuration
+	fmt.Printf("Domain: %s\n", domain.Name)
+	fmt.Printf("Status: %s\n", domain.Status)
+	fmt.Printf("Hosts: %v\n", domain.Hosts)
+	fmt.Printf("Items: %d\n", len(domain.Items))
+	fmt.Printf("Middlewares: %v\n", domain.Middlewares)
+	
+	// Create a HandlerRegistry and register handlers
+	registry := rtr.NewHandlerRegistry()
+	registerHandlers(registry)
+	registerMiddleware(registry)
+	
+	fmt.Println("\n=== Configuration Structure ===")
+	printDomainStructure(domain)
+	
+	fmt.Println("\n=== JSON Serialization Example ===")
+	showJSONSerialization(domain)
+	
+	fmt.Println("\n=== HandlerRegistry Example ===")
+	showHandlerRegistryExample(registry)
+
+	fmt.Println("\n=== Runtime Router Creation ===")
+	showRuntimeRouterCreation(domain, registry)
 }
 
-// CreateDeclarativeRouter demonstrates pure declarative configuration
-func CreateDeclarativeRouter() rtr.RouterInterface {
-	// Define middleware
-	loggingMiddleware := func(next http.Handler) http.Handler {
+// CreateDeclarativeConfiguration demonstrates pure declarative configuration
+func CreateDeclarativeConfiguration() *rtr.Domain {
+	return &rtr.Domain{
+		Name:   "Example API",
+		Status: rtr.StatusEnabled,
+		Hosts:  []string{"api.example.com", "*.api.example.com"},
+		Middlewares: []string{"cors", "logging"},
+		Items: []rtr.ItemInterface{
+			// Home route
+			&rtr.Route{
+				Name:    "Home",
+				Status:  rtr.StatusEnabled,
+				Method:  rtr.MethodGET,
+				Path:    "/",
+				Handler: "home",
+			},
+			// API Group
+			&rtr.Group{
+				Name:   "API v1",
+				Status: rtr.StatusEnabled,
+				Prefix: "/api/v1",
+				Middlewares: []string{"auth", "rate-limit"},
+				Routes: []rtr.Route{
+					{
+						Name:    "List Users",
+						Status:  rtr.StatusEnabled,
+						Method:  rtr.MethodGET,
+						Path:    "/users",
+						Handler: "users-list",
+					},
+					{
+						Name:    "Create User",
+						Status:  rtr.StatusEnabled,
+						Method:  rtr.MethodPOST,
+						Path:    "/users",
+						Handler: "users-create",
+						Middlewares: []string{"validate-user"},
+					},
+					{
+						Name:    "Get User",
+						Status:  rtr.StatusEnabled,
+						Method:  rtr.MethodGET,
+						Path:    "/users/{id}",
+						Handler: "users-get",
+					},
+				},
+			},
+			// Admin routes (disabled for maintenance)
+			&rtr.Route{
+				Name:    "Admin Dashboard",
+				Status:  rtr.StatusDisabled,
+				Method:  rtr.MethodGET,
+				Path:    "/admin",
+				Handler: "admin-dashboard",
+				Middlewares: []string{"admin-auth"},
+			},
+		},
+	}
+}
+
+// registerHandlers registers all route handlers with the registry
+func registerHandlers(registry *rtr.HandlerRegistry) {
+	// Home handler using HTMLHandler
+	homeRoute := rtr.NewRoute().
+		SetName("home").
+		SetPath("/").
+		SetMethod("GET").
+		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return fmt.Sprintf(`<html><body>
+				<h1>Welcome to Declarative Router!</h1>
+				<p>Current time: %s</p>
+				<p>Method: %s</p>
+				<p>Path: %s</p>
+			</body></html>`, time.Now().Format(time.RFC3339), r.Method, r.URL.Path)
+		})
+	registry.AddRoute(homeRoute)
+
+	// Users list handler using JSONHandler
+	usersListRoute := rtr.NewRoute().
+		SetName("users-list").
+		SetPath("/users").
+		SetMethod("GET").
+		SetJSONHandler(func(w http.ResponseWriter, r *http.Request) string {
+			users := []map[string]interface{}{
+				{"id": 1, "name": "alice", "email": "alice@example.com"},
+				{"id": 2, "name": "bob", "email": "bob@example.com"},
+				{"id": 3, "name": "charlie", "email": "charlie@example.com"},
+			}
+			data, _ := json.Marshal(map[string]interface{}{"users": users})
+			return string(data)
+		})
+	registry.AddRoute(usersListRoute)
+
+	// Create user handler using standard Handler
+	usersCreateRoute := rtr.NewRoute().
+		SetName("users-create").
+		SetPath("/users").
+		SetMethod("POST").
+		SetHandler(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "POST" {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+				return
+			}
+			
+			response := map[string]interface{}{
+				"message": "User created successfully",
+				"id":      42,
+				"created": time.Now().Format(time.RFC3339),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(response)
+		})
+	registry.AddRoute(usersCreateRoute)
+
+	// Get user handler using JSONHandler
+	usersGetRoute := rtr.NewRoute().
+		SetName("users-get").
+		SetPath("/users/{id}").
+		SetMethod("GET").
+		SetJSONHandler(func(w http.ResponseWriter, r *http.Request) string {
+			// In a real implementation, you'd extract the ID from the path
+			userID := "42" // Placeholder
+			user := map[string]interface{}{
+				"id":    userID,
+				"name":  "John Doe",
+				"email": "john@example.com",
+			}
+			data, _ := json.Marshal(user)
+			return string(data)
+		})
+	registry.AddRoute(usersGetRoute)
+
+	// Admin dashboard handler using HTMLHandler
+	adminRoute := rtr.NewRoute().
+		SetName("admin-dashboard").
+		SetPath("/admin").
+		SetMethod("GET").
+		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return fmt.Sprintf(`<html><body>
+				<h1>Admin Dashboard</h1>
+				<p>Domain: %s</p>
+				<p>Time: %s</p>
+				<p><strong>Status:</strong> Maintenance Mode</p>
+			</body></html>`, r.Host, time.Now().Format(time.RFC3339))
+		})
+	registry.AddRoute(adminRoute)
+}
+
+// registerMiddleware registers all middleware with the registry
+func registerMiddleware(registry *rtr.HandlerRegistry) {
+	// CORS middleware
+	corsMiddleware := rtr.NewMiddleware("cors", func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Printf("[%s] %s %s\n", r.Method, r.URL.Path, r.RemoteAddr)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			next.ServeHTTP(w, r)
 		})
-	}
+	})
+	registry.AddMiddleware(corsMiddleware)
 
-	authMiddleware := func(next http.Handler) http.Handler {
+	// Logging middleware
+	loggingMiddleware := rtr.NewMiddleware("logging", func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Simple auth check
-			if r.Header.Get("Authorization") == "" {
-				w.Header().Set("X-Auth-Required", "true")
+			start := time.Now()
+			fmt.Printf("[%s] %s %s\n", start.Format(time.RFC3339), r.Method, r.URL.Path)
+			next.ServeHTTP(w, r)
+			fmt.Printf("[%s] Completed in %v\n", time.Now().Format(time.RFC3339), time.Since(start))
+		})
+	})
+	registry.AddMiddleware(loggingMiddleware)
+
+	// Auth middleware
+	authMiddleware := rtr.NewMiddleware("auth", func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			auth := r.Header.Get("Authorization")
+			if auth == "" {
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Authorization required"})
+				return
 			}
 			next.ServeHTTP(w, r)
 		})
-	}
+	})
+	registry.AddMiddleware(authMiddleware)
 
-	// Define different types of handlers to showcase router capabilities
-	
-	// Standard HTTP handler
-	homeHandler := func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"message":   "Welcome to Declarative Router!",
-			"timestamp": time.Now().Format(time.RFC3339),
-			"method":    r.Method,
-			"path":      r.URL.Path,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	}
-
-	// JSON handler - returns JSON string (would use JSONHandler if available)
-	usersHandler := func(w http.ResponseWriter, r *http.Request) {
-		users := []map[string]interface{}{
-			{"id": 1, "name": "alice", "email": "alice@example.com"},
-			{"id": 2, "name": "bob", "email": "bob@example.com"},
-			{"id": 3, "name": "charlie", "email": "charlie@example.com"},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"users": users})
-	}
-
-	// Create user handler with proper error handling
-	createUserHandler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-			return
-		}
-		
-		response := map[string]interface{}{
-			"message": "User created successfully",
-			"id":      42,
-			"created": time.Now().Format(time.RFC3339),
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	// Products handler with version-aware responses
-	productsHandler := func(w http.ResponseWriter, r *http.Request) {
-		products := []map[string]interface{}{
-			{"id": 1, "name": "laptop", "price": 999.99, "category": "electronics"},
-			{"id": 2, "name": "phone", "price": 699.99, "category": "electronics"},
-			{"id": 3, "name": "tablet", "price": 399.99, "category": "electronics"},
-		}
-		
-		response := map[string]interface{}{
-			"products": products,
-			"total":    len(products),
-			"version":  r.Header.Get("X-API-Version"),
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	}
-
-	// Admin handler with HTML response
-	adminHandler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Accept") == "text/html" {
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprintf(w, `<!DOCTYPE html>
-			<html><head><title>Admin Dashboard</title></head>
-			<body><h1>Admin Dashboard</h1><p>Domain: %s</p></body></html>`, r.Host)
-		} else {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"message": "Admin Dashboard",
-				"domain":  r.Host,
-				"time":    time.Now().Format(time.RFC3339),
-			})
-		}
-	}
-
-	// Health check handler
-	healthHandler := func(w http.ResponseWriter, r *http.Request) {
-		health := map[string]interface{}{
-			"status":    "healthy",
-			"timestamp": time.Now().Format(time.RFC3339),
-			"uptime":    "24h", // This would be calculated in real app
-			"version":   "1.0.0",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(health)
-	}
-
-	// Error handler for demonstration
-	errorHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Internal server error",
-			"code":  "500",
+	// Rate limiting middleware
+	rateLimitMiddleware := rtr.NewMiddleware("rate-limit", func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Simple rate limiting simulation
+			w.Header().Set("X-RateLimit-Limit", "100")
+			w.Header().Set("X-RateLimit-Remaining", "99")
+			next.ServeHTTP(w, r)
 		})
-	}
+	})
+	registry.AddMiddleware(rateLimitMiddleware)
 
-	// Declarative router configuration
-	config := rtr.RouterConfig{
-		Name: "Comprehensive Declarative API Router",
-		BeforeMiddleware: []rtr.StdMiddleware{
-			loggingMiddleware,
-		},
-		Routes: []rtr.RouteConfig{
-			rtr.GET("/", homeHandler).
-				WithName("Home").
-				WithMetadata("description", "Main landing page").
-				WithMetadata("public", "true"),
-			
-			rtr.GET("/health", healthHandler).
-				WithName("Health Check").
-				WithMetadata("description", "Service health status").
-				WithMetadata("monitoring", "true"),
-				
-			rtr.GET("/error", errorHandler).
-				WithName("Error Demo").
-				WithMetadata("description", "Demonstrates error handling"),
-		},
-		Groups: []rtr.GroupConfig{
-			rtr.Group("/api",
-				// Direct routes in API group
-				rtr.GET("/users", usersHandler).
-					WithName("List Users").
-					WithMetadata("description", "Get all users").
-					WithMetadata("auth_required", "true").
-					WithBeforeMiddleware(authMiddleware),
-					
-				rtr.POST("/users", createUserHandler).
-					WithName("Create User").
-					WithMetadata("description", "Create a new user").
-					WithMetadata("auth_required", "true").
-					WithBeforeMiddleware(authMiddleware),
-				
-				// Nested version groups
-				rtr.Group("/v1",
-					rtr.GET("/products", productsHandler).
-						WithName("List Products V1").
-						WithMetadata("version", "1.0").
-						WithMetadata("description", "Get products (v1)").
-						WithBeforeMiddleware(func(next http.Handler) http.Handler {
-							return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-								r.Header.Set("X-API-Version", "1.0")
-								next.ServeHTTP(w, r)
-							})
-						}),
-				).WithName("API V1"),
-				
-				rtr.Group("/v2",
-					rtr.GET("/products", productsHandler).
-						WithName("List Products V2").
-						WithMetadata("version", "2.0").
-						WithMetadata("description", "Get products (v2)").
-						WithBeforeMiddleware(func(next http.Handler) http.Handler {
-							return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-								r.Header.Set("X-API-Version", "2.0")
-								next.ServeHTTP(w, r)
-							})
-						}),
-				).WithName("API V2"),
-			).WithName("API Group").
-				WithBeforeMiddleware(func(next http.Handler) http.Handler {
-					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Set("Content-Type", "application/json")
-						next.ServeHTTP(w, r)
-					})
-				}),
-		},
-		Domains: []rtr.DomainConfig{
-			rtr.Domain([]string{"admin.example.com", "*.admin.example.com"},
-				rtr.GET("/", adminHandler).
-					WithName("Admin Home").
-					WithMetadata("description", "Admin dashboard home").
-					WithMetadata("auth_level", "admin"),
-					
-				rtr.Group("/api",
-					rtr.GET("/stats", func(w http.ResponseWriter, r *http.Request) {
-						stats := map[string]interface{}{
-							"users":         42,
-							"requests":      1337,
-							"uptime":        "24h",
-							"last_updated": time.Now().Format(time.RFC3339),
-						}
-						w.Header().Set("Content-Type", "application/json")
-						json.NewEncoder(w).Encode(map[string]interface{}{"stats": stats})
-					}).
-						WithName("Admin Stats").
-						WithMetadata("description", "System statistics").
-						WithMetadata("auth_level", "admin"),
-						
-					rtr.GET("/users", func(w http.ResponseWriter, r *http.Request) {
-						users := map[string]interface{}{
-							"total":        42,
-							"active":       38,
-							"last_24h":     5,
-							"last_updated": time.Now().Format(time.RFC3339),
-						}
-						w.Header().Set("Content-Type", "application/json")
-						json.NewEncoder(w).Encode(map[string]interface{}{"users": users})
-					}).
-						WithName("Admin User Stats").
-						WithMetadata("description", "User statistics").
-						WithMetadata("auth_level", "admin"),
-				).WithName("Admin API").
-				  WithBeforeMiddleware(func(next http.Handler) http.Handler {
-					  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						  w.Header().Set("X-Admin-API", "true")
-						  next.ServeHTTP(w, r)
-					  })
-				  }),
-			),
-		},
-	}
+	// User validation middleware
+	validateUserMiddleware := rtr.NewMiddleware("validate-user", func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("Content-Type") != "application/json" {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Content-Type must be application/json"})
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+	registry.AddMiddleware(validateUserMiddleware)
 
-	return rtr.NewRouterFromConfig(config)
+	// Admin auth middleware
+	adminAuthMiddleware := rtr.NewMiddleware("admin-auth", func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			adminToken := r.Header.Get("X-Admin-Token")
+			if adminToken != "admin-secret-token" {
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Admin access required"})
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	})
+	registry.AddMiddleware(adminAuthMiddleware)
 }
 
-// CreateHybridRouter demonstrates mixing declarative and imperative approaches
-func CreateHybridRouter() rtr.RouterInterface {
-	// Start with declarative base
-	config := rtr.RouterConfig{
-		Name: "Hybrid Router",
-		Routes: []rtr.RouteConfig{
-			rtr.GET("/", func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintf(w, "Hybrid Router Home")
-			}).WithName("Home"),
-		},
-		Groups: []rtr.GroupConfig{
-			rtr.Group("/api",
-				rtr.GET("/users", func(w http.ResponseWriter, r *http.Request) {
-					fmt.Fprintf(w, `{"users": []}`)
-				}).WithName("Users"),
-			).WithName("API"),
-		},
+// printDomainStructure prints the domain configuration structure
+func printDomainStructure(domain *rtr.Domain) {
+	fmt.Printf("Domain: %s (%s)\n", domain.Name, domain.Status)
+	fmt.Printf("  Hosts: %v\n", domain.Hosts)
+	fmt.Printf("  Middlewares: %v\n", domain.Middlewares)
+	fmt.Printf("  Items: %d\n", len(domain.Items))
+	
+	for i, item := range domain.Items {
+		switch v := item.(type) {
+		case *rtr.Route:
+			fmt.Printf("  [%d] Route: %s (%s) %s %s -> %s\n", i, v.Name, v.Status, v.Method, v.Path, v.Handler)
+			if len(v.Middlewares) > 0 {
+				fmt.Printf("      Middlewares: %v\n", v.Middlewares)
+			}
+		case *rtr.Group:
+			fmt.Printf("  [%d] Group: %s (%s) %s\n", i, v.Name, v.Status, v.Prefix)
+			if len(v.Middlewares) > 0 {
+				fmt.Printf("      Middlewares: %v\n", v.Middlewares)
+			}
+			fmt.Printf("      Routes: %d\n", len(v.Routes))
+			for j, route := range v.Routes {
+				fmt.Printf("        [%d] %s (%s) %s %s -> %s\n", j, route.Name, route.Status, route.Method, route.Path, route.Handler)
+				if len(route.Middlewares) > 0 {
+					fmt.Printf("            Middlewares: %v\n", route.Middlewares)
+				}
+			}
+		}
 	}
-
-	router := rtr.NewRouterFromConfig(config)
-
-	// Add imperative routes on top
-	router.AddRoute(rtr.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"status": "ok"}`)
-	}).SetName("Health Check"))
-
-	// Add imperative group
-	adminGroup := rtr.NewGroup().SetPrefix("/admin")
-	adminGroup.AddRoute(rtr.Get("/dashboard", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Admin Dashboard")
-	}).SetName("Admin Dashboard"))
-	router.AddGroup(adminGroup)
-
-	return router
 }
 
-// CreateImperativeRouter demonstrates traditional imperative approach for comparison
-func CreateImperativeRouter() rtr.RouterInterface {
-	router := rtr.NewRouter()
+// showJSONSerialization demonstrates JSON serialization of the configuration
+func showJSONSerialization(domain *rtr.Domain) {
+	data, err := json.MarshalIndent(domain, "", "  ")
+	if err != nil {
+		fmt.Printf("Error serializing domain: %v\n", err)
+		return
+	}
+	fmt.Printf("JSON Configuration:\n%s\n", string(data))
+}
 
-	// Add routes imperatively
-	router.AddRoute(rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Imperative Router Home")
-	}).SetName("Home"))
+// showHandlerRegistryExample demonstrates the HandlerRegistry functionality
+func showHandlerRegistryExample(registry *rtr.HandlerRegistry) {
+	fmt.Println("Handler Registry Contents:")
+	
+	// Try to find registered handlers
+	handlerNames := []string{"home", "users-list", "users-create", "users-get", "admin-dashboard"}
+	for _, name := range handlerNames {
+		handler := registry.FindRoute(name)
+		if handler != nil {
+			fmt.Printf("  ✓ Route '%s': %s %s\n", name, handler.GetMethod(), handler.GetPath())
+		} else {
+			fmt.Printf("  ✗ Route '%s': not found\n", name)
+		}
+	}
+	
+	// Try to find registered middleware
+	middlewareNames := []string{"cors", "logging", "auth", "rate-limit", "validate-user", "admin-auth"}
+	for _, name := range middlewareNames {
+		middleware := registry.FindMiddleware(name)
+		if middleware != nil {
+			fmt.Printf("  ✓ Middleware '%s': %s\n", name, middleware.GetName())
+		} else {
+			fmt.Printf("  ✗ Middleware '%s': not found\n", name)
+		}
+	}
+}
 
-	// Create API group
-	api := rtr.NewGroup().SetPrefix("/api")
-	api.AddRoute(rtr.Get("/users", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"users": []}`)
-	}).SetName("Users"))
-
-	// Create nested group
-	v1 := rtr.NewGroup().SetPrefix("/v1")
-	v1.AddRoute(rtr.Get("/products", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"products": []}`)
-	}).SetName("Products"))
-	api.AddGroup(v1)
-
-	router.AddGroup(api)
-
-	return router
+// showRuntimeRouterCreation demonstrates how to build a runtime router from declarative config
+func showRuntimeRouterCreation(domain *rtr.Domain, registry *rtr.HandlerRegistry) {
+	fmt.Println("Runtime Router Creation Process:")
+	fmt.Printf("1. Domain configuration loaded: %s\n", domain.Name)
+	fmt.Printf("2. Handler registry populated with %d routes and middleware\n", len(domain.Items))
+	fmt.Println("3. Building runtime router...")
+	
+	// In a real implementation, you would:
+	// - Create a new router instance
+	// - Iterate through domain.Items
+	// - For each route, find the handler in the registry and add it to the router
+	// - For each group, create a group and add its routes
+	// - Apply middleware based on the middleware names
+	
+	fmt.Println("\nSteps to build runtime router:")
+	fmt.Println("  a) Create new router instance")
+	fmt.Println("  b) Apply domain-level middleware:")
+	for _, mw := range domain.Middlewares {
+		fmt.Printf("     - Apply middleware: %s\n", mw)
+	}
+	
+	fmt.Println("  c) Process domain items:")
+	for i, item := range domain.Items {
+		switch v := item.(type) {
+		case *rtr.Route:
+			if v.Status == rtr.StatusEnabled {
+				fmt.Printf("     [%d] Add route: %s %s -> %s\n", i, v.Method, v.Path, v.Handler)
+				for _, mw := range v.Middlewares {
+					fmt.Printf("         - Apply middleware: %s\n", mw)
+				}
+			} else {
+				fmt.Printf("     [%d] Skip disabled route: %s\n", i, v.Name)
+			}
+		case *rtr.Group:
+			if v.Status == rtr.StatusEnabled {
+				fmt.Printf("     [%d] Create group: %s with prefix %s\n", i, v.Name, v.Prefix)
+				for _, mw := range v.Middlewares {
+					fmt.Printf("         - Apply group middleware: %s\n", mw)
+				}
+				for j, route := range v.Routes {
+					if route.Status == rtr.StatusEnabled {
+						fmt.Printf("         [%d] Add group route: %s %s -> %s\n", j, route.Method, route.Path, route.Handler)
+						for _, mw := range route.Middlewares {
+							fmt.Printf("             - Apply route middleware: %s\n", mw)
+						}
+					} else {
+						fmt.Printf("         [%d] Skip disabled group route: %s\n", j, route.Name)
+					}
+				}
+			} else {
+				fmt.Printf("     [%d] Skip disabled group: %s\n", i, v.Name)
+			}
+		}
+	}
+	
+	fmt.Println("  d) Router ready for HTTP server")
+	fmt.Println("\nNote: This is a demonstration. In a real implementation,")
+	fmt.Println("you would use the registry to resolve handler names to actual functions.")
 }

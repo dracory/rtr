@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// TestNamedMiddleware tests the basic functionality of named middleware
-func TestNamedMiddleware(t *testing.T) {
-	// Create a named middleware
+// TestMiddleware tests the basic functionality of  middleware
+func TestMiddleware(t *testing.T) {
+	// Create a  middleware
 	authMiddleware := NewMiddleware("Authentication Check", func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Add a header to indicate this middleware ran
@@ -95,9 +95,9 @@ func TestMiddlewareConversion(t *testing.T) {
 	}
 }
 
-// TestRouteWithNamedMiddleware tests adding named middleware to routes
-func TestRouteWithNamedMiddleware(t *testing.T) {
-	// Create named middleware
+// TestRouteWithMiddleware tests adding  middleware to routes
+func TestRouteWithMiddleware(t *testing.T) {
+	// Create  middleware
 	logMiddleware := NewMiddleware("Request Logger", func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-Logged", "true")
@@ -112,7 +112,7 @@ func TestRouteWithNamedMiddleware(t *testing.T) {
 		})
 	})
 
-	// Create a route with named middleware
+	// Create a route with  middleware
 	route := NewRoute().
 		SetMethod("GET").
 		SetPath("/protected").
@@ -123,17 +123,17 @@ func TestRouteWithNamedMiddleware(t *testing.T) {
 		AddBeforeMiddlewares([]MiddlewareInterface{logMiddleware, authMiddleware})
 
 	// Test that middleware was added
-	namedMiddlewares := route.GetBeforeMiddlewares()
-	if len(namedMiddlewares) != 2 {
-		t.Errorf("Expected 2 named middlewares, got %d", len(namedMiddlewares))
+	Middlewares := route.GetBeforeMiddlewares()
+	if len(Middlewares) != 2 {
+		t.Errorf("Expected 2  middlewares, got %d", len(Middlewares))
 	}
 
-	if namedMiddlewares[0].GetName() != "Request Logger" {
-		t.Errorf("Expected first middleware name 'Request Logger', got '%s'", namedMiddlewares[0].GetName())
+	if Middlewares[0].GetName() != "Request Logger" {
+		t.Errorf("Expected first middleware name 'Request Logger', got '%s'", Middlewares[0].GetName())
 	}
 
-	if namedMiddlewares[1].GetName() != "Auth Check" {
-		t.Errorf("Expected second middleware name 'Auth Check', got '%s'", namedMiddlewares[1].GetName())
+	if Middlewares[1].GetName() != "Auth Check" {
+		t.Errorf("Expected second middleware name 'Auth Check', got '%s'", Middlewares[1].GetName())
 	}
 }
 
@@ -189,8 +189,8 @@ func TestExecuteMiddlewareChain(t *testing.T) {
 	}
 }
 
-// TestNamedMiddlewareSetName tests changing middleware names
-func TestNamedMiddlewareSetName(t *testing.T) {
+// TestMiddlewareSetName tests changing middleware names
+func TestMiddlewareSetName(t *testing.T) {
 	middleware := NewMiddleware("Original Name", func(next http.Handler) http.Handler {
 		return next
 	})
@@ -207,35 +207,8 @@ func TestNamedMiddlewareSetName(t *testing.T) {
 	}
 }
 
-// TestRouteConfigWithNamedMiddleware tests RouteConfig with named middleware
-func TestRouteConfigWithNamedMiddleware(t *testing.T) {
-	middleware := NewMiddleware("Test Middleware", func(next http.Handler) http.Handler {
-		return next
-	})
-
-	routeConfig := &RouteConfig{
-		Method: "GET",
-		Path:   "/test",
-		Handler: func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		},
-	}
-
-	// Add named middleware
-	routeConfig.AddBeforeMiddlewares([]MiddlewareInterface{middleware})
-
-	namedMiddlewares := routeConfig.GetBeforeMiddlewares()
-	if len(namedMiddlewares) != 1 {
-		t.Errorf("Expected 1 named middleware, got %d", len(namedMiddlewares))
-	}
-
-	if namedMiddlewares[0].GetName() != "Test Middleware" {
-		t.Errorf("Expected 'Test Middleware', got '%s'", namedMiddlewares[0].GetName())
-	}
-}
-
-// BenchmarkNamedMiddleware benchmarks named middleware performance
-func BenchmarkNamedMiddleware(b *testing.B) {
+// BenchmarkMiddleware benchmarks  middleware performance
+func BenchmarkMiddleware(b *testing.B) {
 	middleware := NewMiddleware("Benchmark Middleware", func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
