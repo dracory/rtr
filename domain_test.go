@@ -326,6 +326,8 @@ func (r *testRoute) SetMethod(method string) rtr.RouteInterface        { return 
 func (r *testRoute) SetPath(path string) rtr.RouteInterface            { r.path = path; return r }
 func (r *testRoute) GetHandler() rtr.Handler                           { return nil }
 func (r *testRoute) SetHandler(handler rtr.Handler) rtr.RouteInterface { return r }
+func (r *testRoute) GetStringHandler() rtr.StringHandler               { return nil }
+func (r *testRoute) SetStringHandler(handler rtr.StringHandler) rtr.RouteInterface { return r }
 func (r *testRoute) GetName() string                                   { return "" }
 func (r *testRoute) SetName(name string) rtr.RouteInterface            { return r }
 func (r *testRoute) AddBeforeMiddlewares(middleware []rtr.Middleware) rtr.RouteInterface {
@@ -348,3 +350,7 @@ func (r *testRoute) GetXMLHandler() rtr.XMLHandler                             {
 func (r *testRoute) SetXMLHandler(handler rtr.XMLHandler) rtr.RouteInterface   { return r }
 func (r *testRoute) GetTextHandler() rtr.TextHandler                           { return nil }
 func (r *testRoute) SetTextHandler(handler rtr.TextHandler) rtr.RouteInterface { return r }
+func (r *testRoute) GetJSHandler() rtr.JSHandler                               { return nil }
+func (r *testRoute) SetJSHandler(handler rtr.JSHandler) rtr.RouteInterface     { return r }
+func (r *testRoute) GetErrorHandler() rtr.ErrorHandler                             { return nil }
+func (r *testRoute) SetErrorHandler(handler rtr.ErrorHandler) rtr.RouteInterface { return r }

@@ -5,25 +5,46 @@ import "net/http"
 // Handler defines the function signature for HTTP request handlers.
 type Handler func(http.ResponseWriter, *http.Request)
 
-// HTMLHandler defines the function signature for HTML response handlers.
-// It returns an HTML string that will be automatically wrapped with HTMLResponse.
-type HTMLHandler func(http.ResponseWriter, *http.Request) string
+// ErrorHandler is a convenience shorthand handler for error responses.
+// Returns an error that will be handled appropriately.
+// If the returned error is nil, it means no error occurred and the response is successful.
+// Content-Type and status codes are left to specific extensions like 404ErrorHandler.
+type ErrorHandler func(http.ResponseWriter, *http.Request) error
 
-// JSONHandler defines the function signature for JSON response handlers.
-// It returns a JSON string that will be automatically wrapped with JSONResponse.
-type JSONHandler func(http.ResponseWriter, *http.Request) string
+// StringHandler is a convenience shorthand handler for simple string responses.
+// It returns a string that will be written directly to the response without setting any headers.
+// The handler is responsible for setting any headers it needs.
+type StringHandler func(http.ResponseWriter, *http.Request) string
 
-// CSSHandler defines the function signature for CSS response handlers.
-// It returns a CSS string that will be automatically wrapped with CSSResponse.
-type CSSHandler func(http.ResponseWriter, *http.Request) string
+// HTMLHandler is a convenience shorthand handler that returns HTML content.
+// Automatically sets Content-Type: "text/html; charset=utf-8" header.
+// Returns an HTML string that will be wrapped with HTMLResponse().
+type HTMLHandler StringHandler
 
-// XMLHandler defines the function signature for XML response handlers.
-// It returns an XML string that will be automatically wrapped with XMLResponse.
-type XMLHandler func(http.ResponseWriter, *http.Request) string
+// JSONHandler is a convenience shorthand handler that returns JSON content.
+// Automatically sets Content-Type: "application/json" header.
+// Returns a JSON string that will be wrapped with JSONResponse().
+type JSONHandler StringHandler
 
-// TextHandler defines the function signature for text response handlers.
-// It returns a plain text string that will be automatically wrapped with TextResponse.
-type TextHandler func(http.ResponseWriter, *http.Request) string
+// CSSHandler is a convenience shorthand handler that returns CSS content.
+// Automatically sets Content-Type: "text/css" header.
+// Returns a CSS string that will be wrapped with CSSResponse().
+type CSSHandler StringHandler
+
+// XMLHandler is a convenience shorthand handler that returns XML content.
+// Automatically sets Content-Type: "application/xml" header.
+// Returns an XML string that will be wrapped with XMLResponse().
+type XMLHandler StringHandler
+
+// TextHandler is a convenience shorthand handler that returns plain text content.
+// Automatically sets Content-Type: "text/plain; charset=utf-8" header.
+// Returns a plain text string that will be wrapped with TextResponse().
+type TextHandler StringHandler
+
+// JSHandler is a convenience shorthand handler that returns JavaScript content.
+// Automatically sets Content-Type: "application/javascript" header.
+// Returns a JavaScript string that will be wrapped with JSResponse().
+type JSHandler StringHandler
 
 // Middleware represents a middleware function.
 // It is a function type that takes an http.Handler and returns an http.Handler.
@@ -49,6 +70,11 @@ type RouteInterface interface {
 	// SetHandler sets the handler function for this route and returns the route for method chaining.
 	SetHandler(handler Handler) RouteInterface
 
+	// GetStringHandler returns the string handler function associated with this route.
+	GetStringHandler() StringHandler
+	// SetStringHandler sets the string handler function for this route and returns the route for method chaining.
+	SetStringHandler(handler StringHandler) RouteInterface
+
 	// GetHTMLHandler returns the HTML handler function associated with this route.
 	GetHTMLHandler() HTMLHandler
 	// SetHTMLHandler sets the HTML handler function for this route and returns the route for method chaining.
@@ -73,6 +99,16 @@ type RouteInterface interface {
 	GetTextHandler() TextHandler
 	// SetTextHandler sets the text handler function for this route and returns the route for method chaining.
 	SetTextHandler(handler TextHandler) RouteInterface
+
+	// GetJSHandler returns the JavaScript handler function associated with this route.
+	GetJSHandler() JSHandler
+	// SetJSHandler sets the JavaScript handler function for this route and returns the route for method chaining.
+	SetJSHandler(handler JSHandler) RouteInterface
+
+	// GetErrorHandler returns the error handler function associated with this route.
+	GetErrorHandler() ErrorHandler
+	// SetErrorHandler sets the error handler function for this route and returns the route for method chaining.
+	SetErrorHandler(handler ErrorHandler) RouteInterface
 
 	// GetName returns the name identifier associated with this route.
 	GetName() string

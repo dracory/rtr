@@ -39,3 +39,10 @@ func TextResponse(w http.ResponseWriter, r *http.Request, body string) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Write([]byte(body))
 }
+
+// JSResponse responds with JavaScript content and sets the appropriate Content-Type header.
+// It sets the Content-Type to "application/javascript".
+func JSResponse(w http.ResponseWriter, r *http.Request, body string) {
+	w.Header().Set("Content-Type", "application/javascript")
+	w.Write([]byte(body))
+}

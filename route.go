@@ -25,6 +25,9 @@ type routeImpl struct {
 	// handler is the function that will be called when this route is matched
 	handler Handler
 
+	// stringHandler is the simple string handler function that returns a string without setting headers
+	stringHandler StringHandler
+
 	// htmlHandler is the HTML handler function that returns HTML string
 	htmlHandler HTMLHandler
 
@@ -39,6 +42,12 @@ type routeImpl struct {
 
 	// textHandler is the text handler function that returns plain text string
 	textHandler TextHandler
+
+	// jsHandler is the JavaScript handler function that returns JavaScript string
+	jsHandler JSHandler
+
+	// errorHandler is the error handler function that returns error message and status code
+	errorHandler ErrorHandler
 
 	// name is an optional identifier for this route, useful for route generation and debugging
 	name string
@@ -97,36 +106,69 @@ func (r *routeImpl) SetPath(path string) RouteInterface {
 
 // GetHandler returns the handler function associated with this route.
 // Returns the Handler function that will be called when this route is matched.
-// Implements handler prioritization: Handler > HTMLHandler > JSONHandler > CSSHandler > XMLHandler > TextHandler
+// Implements handler prioritization: Handler > StringHandler > HTMLHandler > JSONHandler > CSSHandler > XMLHandler > TextHandler > ErrorHandler
 func (r *routeImpl) GetHandler() Handler {
 	// Priority 1: Direct Handler
 	if r.handler != nil {
 		return r.handler
 	}
 
-	// Priority 2: HTMLHandler - convert to standard Handler
+	// Priority 2: StringHandler - convert to standard Handler (no automatic headers)
+	if r.stringHandler != nil {
+		return ToHandler(r.stringHandler)
+	}
+
+	// Priority 3: HTMLHandler - convert to standard Handler with HTML headers
 	if r.htmlHandler != nil {
-		return ToHandler(r.htmlHandler)
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.htmlHandler(w, req)
+			HTMLResponse(w, req, body)
+		}
 	}
 
-	// Priority 3: JSONHandler - convert to standard Handler
+	// Priority 4: JSONHandler - convert to standard Handler with JSON headers
 	if r.jsonHandler != nil {
-		return ToHandler(r.jsonHandler)
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.jsonHandler(w, req)
+			JSONResponse(w, req, body)
+		}
 	}
 
-	// Priority 4: CSSHandler - convert to standard Handler
+	// Priority 5: CSSHandler - convert to standard Handler with CSS headers
 	if r.cssHandler != nil {
-		return ToHandler(r.cssHandler)
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.cssHandler(w, req)
+			CSSResponse(w, req, body)
+		}
 	}
 
-	// Priority 5: XMLHandler - convert to standard Handler
+	// Priority 6: XMLHandler - convert to standard Handler with XML headers
 	if r.xmlHandler != nil {
-		return ToHandler(r.xmlHandler)
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.xmlHandler(w, req)
+			XMLResponse(w, req, body)
+		}
 	}
 
-	// Priority 6: TextHandler - convert to standard Handler
+	// Priority 7: TextHandler - convert to standard Handler with Text headers
 	if r.textHandler != nil {
-		return ToHandler(r.textHandler)
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.textHandler(w, req)
+			TextResponse(w, req, body)
+		}
+	}
+
+	// Priority 8: JSHandler - convert to standard Handler with JavaScript headers
+	if r.jsHandler != nil {
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.jsHandler(w, req)
+			JSResponse(w, req, body)
+		}
+	}
+
+	// Priority 9: ErrorHandler - convert to standard Handler
+	if r.errorHandler != nil {
+		return ErrorHandlerToHandler(r.errorHandler)
 	}
 
 	// No handler found
@@ -138,6 +180,20 @@ func (r *routeImpl) GetHandler() Handler {
 // The handler parameter should be a function that implements the Handler interface.
 func (r *routeImpl) SetHandler(handler Handler) RouteInterface {
 	r.handler = handler
+	return r
+}
+
+// GetStringHandler returns the string handler function associated with this route.
+// Returns the StringHandler function that will be called when this route is matched.
+func (r *routeImpl) GetStringHandler() StringHandler {
+	return r.stringHandler
+}
+
+// SetStringHandler sets the string handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns a string without setting headers.
+func (r *routeImpl) SetStringHandler(handler StringHandler) RouteInterface {
+	r.stringHandler = handler
 	return r
 }
 
@@ -208,6 +264,34 @@ func (r *routeImpl) GetTextHandler() TextHandler {
 // The handler parameter should be a function that returns plain text string.
 func (r *routeImpl) SetTextHandler(handler TextHandler) RouteInterface {
 	r.textHandler = handler
+	return r
+}
+
+// GetJSHandler returns the JavaScript handler function associated with this route.
+// Returns the JSHandler function that will be called when this route is matched.
+func (r *routeImpl) GetJSHandler() JSHandler {
+	return r.jsHandler
+}
+
+// SetJSHandler sets the JavaScript handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns JavaScript string.
+func (r *routeImpl) SetJSHandler(handler JSHandler) RouteInterface {
+	r.jsHandler = handler
+	return r
+}
+
+// GetErrorHandler returns the error handler function associated with this route.
+// Returns the ErrorHandler function that will be called when this route is matched.
+func (r *routeImpl) GetErrorHandler() ErrorHandler {
+	return r.errorHandler
+}
+
+// SetErrorHandler sets the error handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns an error (nil means no error).
+func (r *routeImpl) SetErrorHandler(handler ErrorHandler) RouteInterface {
+	r.errorHandler = handler
 	return r
 }
 
