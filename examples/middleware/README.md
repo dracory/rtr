@@ -1,23 +1,22 @@
-# Named Middleware Example
+# Middleware Example
 
-This example demonstrates the named middleware functionality of the Dracory HTTP Router package, similar to the old gouniverse/router pattern.
+This example demonstrates the middleware functionality of the Dracory HTTP Router package.
 
 ## Features Demonstrated
 
-- Creating named middleware with descriptive names
-- Using anonymous middleware for simple cases
-- Adding named middleware to routes, groups, and router
+- Creating middleware with descriptive names
+- Using middleware for authentication, authorization, and logging
+- Adding middleware to routes, groups, and router
 - Middleware execution order and chaining
-- Converting between regular and named middleware
-- Using declarative RouteConfig with named middleware
-- Better debugging and documentation through named middleware
+- Using declarative RouteConfig with middleware
+- Better debugging and documentation through middleware names
 
-## Named Middleware Benefits
+## Middleware Benefits
 
-- **Better Debugging**: Named middleware provides clear identification in logs and debugging
+- **Better Debugging**: Middleware provides clear identification in logs and debugging
 - **Documentation**: Middleware names serve as inline documentation
-- **Reusability**: Named middleware can be easily shared across routes and groups
-- **Backward Compatibility**: Works alongside existing middleware functions
+- **Reusability**: Middleware can be easily shared across routes and groups
+- **Flexibility**: Works with both before and after middleware chains
 
 ## Running the Example
 
