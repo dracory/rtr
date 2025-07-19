@@ -1,10 +1,12 @@
-package rtr
+package rtr_test
 
 import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	rtr "github.com/dracory/rtr"
 )
 
 func TestToHandler(t *testing.T) {
@@ -79,7 +81,7 @@ func TestToHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create the handler using ToHandler
-			handler := ToHandler(tt.handlerFunc)
+			handler := rtr.ToHandler(tt.handlerFunc)
 
 			// Create test request and response recorder
 			req := httptest.NewRequest("GET", "/test", nil)
@@ -109,7 +111,7 @@ func TestToHandler(t *testing.T) {
 
 func TestToHandlerWithCustomHeaders(t *testing.T) {
 	// Test that ToHandler preserves custom headers set by the string handler
-	handler := ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+	handler := rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("X-Custom", "test-value")
@@ -144,7 +146,7 @@ func TestToHandlerWithCustomHeaders(t *testing.T) {
 
 func TestToHandlerWithStatusCode(t *testing.T) {
 	// Test that ToHandler allows the string handler to set custom status codes
-	handler := ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+	handler := rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 		w.WriteHeader(http.StatusCreated)
 		return "Resource created"
 	})
@@ -175,8 +177,8 @@ func TestToHandlerNilHandler(t *testing.T) {
 	}()
 
 	// Create handler with nil function
-	handler := ToHandler(nil)
-	
+	handler := rtr.ToHandler(nil)
+
 	// This should panic when we try to call the nil function
 	req := httptest.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
@@ -189,10 +191,10 @@ func TestToHandlerReturnType(t *testing.T) {
 		return "test"
 	}
 
-	handler := ToHandler(stringHandler)
+	handler := rtr.ToHandler(stringHandler)
 
 	// Verify it implements the Handler interface
-	var _ Handler = handler
+	var _ rtr.Handler = handler
 
 	// Verify it's actually a function with the right signature
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -209,7 +211,7 @@ func TestToHandlerReturnType(t *testing.T) {
 func TestErrorHandlerToHandler(t *testing.T) {
 	tests := []struct {
 		name         string
-		errorHandler ErrorHandler
+		errorHandler rtr.ErrorHandler
 		expectedBody string
 		expectedCode int
 	}{
@@ -261,7 +263,7 @@ func TestErrorHandlerToHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create the handler using ErrorHandlerToHandler
-			handler := ErrorHandlerToHandler(tt.errorHandler)
+			handler := rtr.ErrorHandlerToHandler(tt.errorHandler)
 
 			// Create test request and response recorder
 			req := httptest.NewRequest("GET", "/test", nil)
@@ -285,7 +287,7 @@ func TestErrorHandlerToHandler(t *testing.T) {
 
 func TestErrorHandlerToHandlerWithCustomHeaders(t *testing.T) {
 	// Test that ErrorHandlerToHandler preserves custom headers set by the error handler
-	handler := ErrorHandlerToHandler(func(w http.ResponseWriter, r *http.Request) error {
+	handler := rtr.ErrorHandlerToHandler(func(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("X-Error-Code", "USER_NOT_FOUND")
 		return errors.New(`{"error": "user not found"}`)
@@ -298,7 +300,7 @@ func TestErrorHandlerToHandlerWithCustomHeaders(t *testing.T) {
 
 	// Check that custom headers are preserved
 	expectedHeaders := map[string]string{
-		"Content-Type":  "application/json",
+		"Content-Type": "application/json",
 		"X-Error-Code": "USER_NOT_FOUND",
 	}
 
@@ -325,8 +327,8 @@ func TestErrorHandlerToHandlerNilHandler(t *testing.T) {
 	}()
 
 	// Create handler with nil function
-	handler := ErrorHandlerToHandler(nil)
-	
+	handler := rtr.ErrorHandlerToHandler(nil)
+
 	// This should panic when we try to call the nil function
 	req := httptest.NewRequest("GET", "/test", nil)
 	w := httptest.NewRecorder()
@@ -339,10 +341,10 @@ func TestErrorHandlerToHandlerReturnType(t *testing.T) {
 		return errors.New("test error")
 	}
 
-	handler := ErrorHandlerToHandler(errorHandler)
+	handler := rtr.ErrorHandlerToHandler(errorHandler)
 
 	// Verify it implements the Handler interface
-	var _ Handler = handler
+	var _ rtr.Handler = handler
 
 	// Verify it's actually a function with the right signature
 	req := httptest.NewRequest("GET", "/test", nil)

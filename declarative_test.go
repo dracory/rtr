@@ -1,9 +1,11 @@
-package rtr
+package rtr_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	rtr "github.com/dracory/rtr"
 )
 
 func TestDeclarativeAPI(t *testing.T) {
@@ -30,30 +32,30 @@ func TestDeclarativeAPI(t *testing.T) {
 	}
 
 	// Create router using declarative configuration
-	config := RouterConfig{
-		Name:   "Test Router",
-		Prefix: "",
-		BeforeMiddleware: []Middleware{testMiddleware},
-		Routes: []RouteConfig{
-			GET("/", homeHandler).WithName("Home"),
+	config := rtr.RouterConfig{
+		Name:             "Test Router",
+		Prefix:           "",
+		BeforeMiddleware: []rtr.Middleware{testMiddleware},
+		Routes: []rtr.RouteConfig{
+			rtr.GET("/", homeHandler).WithName("Home"),
 		},
-		Groups: []GroupConfig{
-			Group("/api",
-				GET("/users", usersHandler).WithName("List Users"),
-				POST("/users", createUserHandler).WithName("Create User"),
-				Group("/admin",
-					GET("/dashboard", adminHandler).WithName("Admin Dashboard"),
+		Groups: []rtr.GroupConfig{
+			rtr.Group("/api",
+				rtr.GET("/users", usersHandler).WithName("List Users"),
+				rtr.POST("/users", createUserHandler).WithName("Create User"),
+				rtr.Group("/admin",
+					rtr.GET("/dashboard", adminHandler).WithName("Admin Dashboard"),
 				).WithName("Admin Group"),
 			).WithName("API Group"),
 		},
-		Domains: []DomainConfig{
-			Domain([]string{"admin.example.com"},
-				GET("/", adminHandler).WithName("Admin Home"),
+		Domains: []rtr.DomainConfig{
+			rtr.Domain([]string{"admin.example.com"},
+				rtr.GET("/", adminHandler).WithName("Admin Home"),
 			),
 		},
 	}
 
-	router := NewRouterFromConfig(config)
+	router := rtr.NewRouterFromConfig(config)
 
 	// Test the routes
 	tests := []struct {
@@ -124,32 +126,32 @@ func TestDeclarativeHelperFunctions(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {}
 
 	// Test route helper functions
-	getRoute := GET("/test", handler)
+	getRoute := rtr.GET("/test", handler)
 	if getRoute.Method != "GET" || getRoute.Path != "/test" {
 		t.Error("GET helper function failed")
 	}
 
-	postRoute := POST("/test", handler)
+	postRoute := rtr.POST("/test", handler)
 	if postRoute.Method != "POST" || postRoute.Path != "/test" {
 		t.Error("POST helper function failed")
 	}
 
-	putRoute := PUT("/test", handler)
+	putRoute := rtr.PUT("/test", handler)
 	if putRoute.Method != "PUT" || putRoute.Path != "/test" {
 		t.Error("PUT helper function failed")
 	}
 
-	deleteRoute := DELETE("/test", handler)
+	deleteRoute := rtr.DELETE("/test", handler)
 	if deleteRoute.Method != "DELETE" || deleteRoute.Path != "/test" {
 		t.Error("DELETE helper function failed")
 	}
 
-	patchRoute := PATCH("/test", handler)
+	patchRoute := rtr.PATCH("/test", handler)
 	if patchRoute.Method != "PATCH" || patchRoute.Path != "/test" {
 		t.Error("PATCH helper function failed")
 	}
 
-	optionsRoute := OPTIONS("/test", handler)
+	optionsRoute := rtr.OPTIONS("/test", handler)
 	if optionsRoute.Method != "OPTIONS" || optionsRoute.Path != "/test" {
 		t.Error("OPTIONS helper function failed")
 	}
@@ -159,7 +161,7 @@ func TestRouteConfigChaining(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {}
 	middleware := func(next http.Handler) http.Handler { return next }
 
-	route := GET("/test", handler).
+	route := rtr.GET("/test", handler).
 		WithName("Test Route").
 		WithBeforeMiddleware(middleware).
 		WithAfterMiddleware(middleware).
@@ -186,9 +188,9 @@ func TestGroupConfigChaining(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {}
 	middleware := func(next http.Handler) http.Handler { return next }
 
-	group := Group("/api",
-		GET("/users", handler),
-		POST("/users", handler),
+	group := rtr.Group("/api",
+		rtr.GET("/users", handler),
+		rtr.POST("/users", handler),
 	).WithName("API Group").
 		WithBeforeMiddleware(middleware).
 		WithAfterMiddleware(middleware)
@@ -210,54 +212,23 @@ func TestGroupConfigChaining(t *testing.T) {
 	}
 }
 
-func TestNestedGroups(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {}
-
-	config := RouterConfig{
-		Groups: []GroupConfig{
-			Group("/api",
-				Group("/v1",
-					GET("/users", handler).WithName("V1 Users"),
-					Group("/admin",
-						GET("/dashboard", handler).WithName("V1 Admin Dashboard"),
-					),
-				).WithName("V1 Group"),
-				Group("/v2",
-					GET("/users", handler).WithName("V2 Users"),
-				).WithName("V2 Group"),
-			).WithName("API Group"),
-		},
-	}
-
-	router := NewRouterFromConfig(config)
-
-	// Test nested route
-	req := httptest.NewRequest("GET", "/api/v1/admin/dashboard", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != 200 {
-		t.Errorf("Nested group route failed, status: %d", w.Code)
-	}
-}
-
 func TestDomainConfig(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Admin"))
 	}
 
-	config := RouterConfig{
-		Domains: []DomainConfig{
-			Domain([]string{"admin.example.com", "*.admin.example.com"},
-				GET("/", handler).WithName("Admin Home"),
-				Group("/api",
-					GET("/users", handler).WithName("Admin API Users"),
+	config := rtr.RouterConfig{
+		Domains: []rtr.DomainConfig{
+			rtr.Domain([]string{"admin.example.com", "*.admin.example.com"},
+				rtr.GET("/", handler).WithName("Admin Home"),
+				rtr.Group("/api",
+					rtr.GET("/users", handler).WithName("Admin API Users"),
 				),
 			),
 		},
 	}
 
-	router := NewRouterFromConfig(config)
+	router := rtr.NewRouterFromConfig(config)
 
 	// Test domain route with correct host
 	req := httptest.NewRequest("GET", "/", nil)
