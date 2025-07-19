@@ -15,7 +15,8 @@ This document compares the routing capabilities of Dracory Router and [Gounivers
 | **Middleware** | ✅ Before/after middleware at router, group, and route levels | ✅ Global and per-route middleware support |
 | **Middleware Chaining** | ✅ Hierarchical chaining | ✅ Explicit middleware definition |
 | **Performance** | Lightweight with standard `http.Handler` interface | Lightweight, designed to be fast |
-| **Handler Types** | ✅ Standard `http.HandlerFunc` | ✅ Multiple types: HTML, JSON, and Idiomatic handlers |
+| **Response Helpers** | ✅ Built-in response helpers for HTML, JSON, CSS, XML, Text, JS | ✅ Automatic response wrapping for HTML/JSON handlers |
+| **Handler Types** | ✅ Multiple types: Standard, HTML, JSON, CSS, XML, Text, JS handlers | ✅ Multiple types: HTML, JSON, and Idiomatic handlers |
 | **Route Listing** | ❌ No built-in support | ✅ Built-in route listing and visualization |
 | **Controller Support** | ✅ Through standard patterns | ✅ Built-in MVC controller interfaces |
 | **Custom Not Found** | ✅ Supported through middleware | ✅ Catch-all route support |
@@ -33,6 +34,17 @@ This document compares the routing capabilities of Dracory Router and [Gounivers
 router := rtr.NewRouter()
 router.AddRoute(rtr.Get("/users", usersHandler))
 router.AddRoute(rtr.Post("/users", createUserHandler))
+
+// Using specialized handlers
+router.AddRoute(rtr.GetHTML("/page", func(w http.ResponseWriter, r *http.Request) string {
+    return "<h1>Hello World</h1>"
+}))
+router.AddRoute(rtr.GetJSON("/api/data", func(w http.ResponseWriter, r *http.Request) string {
+    return `{"message": "success"}`
+}))
+router.AddRoute(rtr.GetCSS("/styles", func(w http.ResponseWriter, r *http.Request) string {
+    return "body { margin: 0; }"
+}))
 ```
 
 **Gouniverse Router**
@@ -203,6 +215,8 @@ router.List(globalMiddlewares, routes)
 - Building multi-domain applications
 - Need complex routing hierarchies
 - Require fine-grained middleware control
+- Want simplified response handling with multiple content types
+- Need specialized handlers (HTML, JSON, CSS, XML, Text, JS)
 - Working with existing Go HTTP ecosystem
 - Building high-performance APIs
 - Need IPv4/IPv6 with port-specific routing
@@ -219,7 +233,7 @@ router.List(globalMiddlewares, routes)
 
 Both routers serve different needs:
 
-- **Dracory Router** excels in complex, enterprise-level applications requiring maximum flexibility and standard Go patterns.
+- **Dracory Router** excels in complex, enterprise-level applications requiring maximum flexibility, multiple handler types, and standard Go patterns.
 - **Gouniverse Router** shines in applications where simplicity, explicitness, and easy debugging are prioritized over flexibility.
 
 The choice depends on your project's complexity, team preferences, and specific routing requirements.

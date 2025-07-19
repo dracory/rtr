@@ -15,6 +15,8 @@ This document focuses specifically on comparing the routing capabilities of Drac
 | **Middleware** | ✅ Before/after middleware with per-route, group, and global support | ✅ Standard middleware support (no built-in after middleware) |
 | **Middleware Chaining** | ✅ Supports chaining | ✅ Supports chaining |
 | **Performance** | Lightweight, minimal overhead | Highly optimized, uses httprouter |
+| **Response Helpers** | ✅ Built-in response helpers for HTML, JSON, CSS, XML, Text, JS | ❌ Manual response handling |
+| **Handler Types** | ✅ Multiple types: Standard, HTML, JSON, CSS, XML, Text, JS handlers | ✅ Standard `http.HandlerFunc` |
 | **Static Files** | ❌ No built-in support | ✅ Built-in static file serving |
 | **Custom Not Found** | ✅ Supported | ✅ Supported |
 | **Custom Method Not Allowed** | ❌ Not supported | ✅ Supported |
@@ -31,6 +33,14 @@ This document focuses specifically on comparing the routing capabilities of Drac
 router := rtr.NewRouter()
 router.Get("/users", usersHandler)
 router.Post("/users", createUserHandler)
+
+// Using specialized handlers
+router.GetHTML("/page", func(w http.ResponseWriter, r *http.Request) string {
+    return "<h1>Hello World</h1>"
+})
+router.GetJSON("/api/data", func(w http.ResponseWriter, r *http.Request) string {
+    return `{"message": "success"}`
+})
 ```
 
 **Gin**
@@ -38,6 +48,15 @@ router.Post("/users", createUserHandler)
 router := gin.New()
 router.GET("/users", usersHandler)
 router.POST("/users", createUserHandler)
+
+// Manual response handling
+router.GET("/page", func(c *gin.Context) {
+    c.Header("Content-Type", "text/html")
+    c.String(200, "<h1>Hello World</h1>")
+})
+router.GET("/api/data", func(c *gin.Context) {
+    c.JSON(200, gin.H{"message": "success"})
+})
 ```
 
 ### Route Groups
@@ -110,6 +129,8 @@ router.GET("/secure", authMiddleware, secureHandler)
 ### Choose Dracory Router if:
 - You need domain-based routing
 - You prefer explicit route configuration
+- You want simplified response handling with built-in content-type helpers
+- You need multiple handler types (HTML, JSON, CSS, XML, Text, JS)
 - You want a lightweight, focused routing solution
 - You're building a custom framework
 
@@ -122,7 +143,7 @@ router.GET("/secure", authMiddleware, secureHandler)
 ## Conclusion
 
 Both routers have their strengths:
-- **Dracory Router** excels in domain-based routing and explicit configuration
-- **Gin Router** provides more advanced path matching capabilities and better performance
+- **Dracory Router** excels in domain-based routing, explicit configuration, and simplified response handling with multiple handler types
+- **Gin Router** provides more advanced path matching capabilities, better performance, and a complete web framework
 
 The choice depends on your specific routing needs and whether you value simplicity and domain routing (Dracory) or advanced path matching and performance (Gin).
