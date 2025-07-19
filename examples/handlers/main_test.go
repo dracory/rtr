@@ -317,7 +317,7 @@ func setupRoutes(r rtr.RouterInterface) {
 				w.Write([]byte(`{"error": "simulated internal server error"}`))
 				return fmt.Errorf("simulated internal server error")
 			}
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(`{"message": "Success! No error occurred.", "status": "ok"}`))
 			return nil
@@ -338,7 +338,7 @@ func setupRoutes(r rtr.RouterInterface) {
 	r.AddRoute(rtr.NewRoute().
 		SetMethod(http.MethodGet).
 		SetPath("/to-handler-demo").
-		SetHandler(rtr.ToHandler(func(w http.ResponseWriter, req *http.Request) string {
+		SetHandler(rtr.ToStdHandler(func(w http.ResponseWriter, req *http.Request) string {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Header().Set("X-Converted-Handler", "true")
 			return `<h1>ToHandler Function Demo</h1><p>This was converted using rtr.ToHandler()!</p>`

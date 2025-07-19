@@ -313,7 +313,7 @@ func TestToHandlerHelpers(t *testing.T) {
 		{
 			name: "ToHandler simple string",
 			handlerFunc: func() rtr.StdHandler {
-				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+				return rtr.ToStdHandler(func(w http.ResponseWriter, r *http.Request) string {
 					return "<h1>HTML Test</h1>"
 				})
 			},
@@ -323,7 +323,7 @@ func TestToHandlerHelpers(t *testing.T) {
 		{
 			name: "ToHandler with manual headers",
 			handlerFunc: func() rtr.StdHandler {
-				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+				return rtr.ToStdHandler(func(w http.ResponseWriter, r *http.Request) string {
 					w.Header().Set("Content-Type", "application/json")
 					return `{"test": "json"}`
 				})
@@ -334,7 +334,7 @@ func TestToHandlerHelpers(t *testing.T) {
 		{
 			name: "ToHandler plain text",
 			handlerFunc: func() rtr.StdHandler {
-				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+				return rtr.ToStdHandler(func(w http.ResponseWriter, r *http.Request) string {
 					return "Plain text content"
 				})
 			},

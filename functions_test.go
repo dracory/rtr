@@ -81,7 +81,7 @@ func TestToHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create the handler using ToHandler
-			handler := rtr.ToHandler(tt.handlerFunc)
+			handler := rtr.ToStdHandler(tt.handlerFunc)
 
 			// Create test request and response recorder
 			req := httptest.NewRequest("GET", "/test", nil)
@@ -111,7 +111,7 @@ func TestToHandler(t *testing.T) {
 
 func TestToHandlerWithCustomHeaders(t *testing.T) {
 	// Test that ToHandler preserves custom headers set by the string handler
-	handler := rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+	handler := rtr.ToStdHandler(func(w http.ResponseWriter, r *http.Request) string {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("X-Custom", "test-value")
@@ -146,7 +146,7 @@ func TestToHandlerWithCustomHeaders(t *testing.T) {
 
 func TestToHandlerWithStatusCode(t *testing.T) {
 	// Test that ToHandler allows the string handler to set custom status codes
-	handler := rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
+	handler := rtr.ToStdHandler(func(w http.ResponseWriter, r *http.Request) string {
 		w.WriteHeader(http.StatusCreated)
 		return "Resource created"
 	})
@@ -177,7 +177,7 @@ func TestToHandlerNilHandler(t *testing.T) {
 	}()
 
 	// Create handler with nil function
-	handler := rtr.ToHandler(nil)
+	handler := rtr.ToStdHandler(nil)
 
 	// This should panic when we try to call the nil function
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -191,7 +191,7 @@ func TestToHandlerReturnType(t *testing.T) {
 		return "test"
 	}
 
-	handler := rtr.ToHandler(stringHandler)
+	handler := rtr.ToStdHandler(stringHandler)
 
 	// Verify it implements the Handler interface
 	var _ rtr.StdHandler = handler

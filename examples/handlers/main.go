@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				w.WriteHeader(http.StatusInternalServerError)
 				return fmt.Errorf("simulated internal server error")
 			}
-			
+
 			// Success case
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(`{"message": "Success! No error occurred.", "status": "ok"}`))
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	r.AddRoute(rtr.NewRoute().
 		SetMethod(http.MethodGet).
 		SetPath("/to-handler-demo").
-		SetHandler(rtr.ToHandler(func(w http.ResponseWriter, req *http.Request) string {
+		SetHandler(rtr.ToStdHandler(func(w http.ResponseWriter, req *http.Request) string {
 			// This is a StringHandler being converted to a Handler using ToHandler
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Header().Set("X-Converted-Handler", "true")

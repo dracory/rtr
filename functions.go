@@ -2,7 +2,7 @@ package rtr
 
 import "net/http"
 
-// ToHandler converts any string-returning handler to a standard Handler.
+// ToStdHandler converts any string-returning handler to a standard Handler.
 // It simply writes the returned string to the response without setting any headers.
 // The string handler is responsible for setting any headers it needs.
 //
@@ -11,7 +11,7 @@ import "net/http"
 //
 // Returns:
 //   - A standard Handler function that writes the returned string to the response.
-func ToHandler(handler StringHandler) StdHandler {
+func ToStdHandler(handler StringHandler) StdHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(handler(w, r)))
 	}
