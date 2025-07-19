@@ -39,7 +39,10 @@ func (r *routerImpl) listMiddlewares() {
 		tableMiddleware.AppendHeader(table.Row{"#", "Middleware Name", "Type"})
 		
 		for index, middleware := range beforeMiddlewares {
-			name := GetMiddlewareName(middleware)
+			name := middleware.GetName()
+			if name == "" {
+				name = "<anonymous>"
+			}
 			tableMiddleware.AppendRow(table.Row{index + 1, name, "Before"})
 		}
 		
@@ -55,7 +58,10 @@ func (r *routerImpl) listMiddlewares() {
 		tableMiddleware.AppendHeader(table.Row{"#", "Middleware Name", "Type"})
 		
 		for index, middleware := range afterMiddlewares {
-			name := GetMiddlewareName(middleware)
+			name := middleware.GetName()
+			if name == "" {
+				name = "<anonymous>"
+			}
 			tableMiddleware.AppendRow(table.Row{index + 1, name, "After"})
 		}
 		
@@ -233,13 +239,19 @@ func GetRouteMiddlewareNames(route RouteInterface) []string {
 	
 	// Before middlewares
 	for _, middleware := range route.GetBeforeMiddlewares() {
-		name := GetMiddlewareName(middleware)
+		name := middleware.GetName()
+		if name == "" {
+			name = "<anonymous>"
+		}
 		names = append(names, name+" (before)")
 	}
 	
 	// After middlewares
 	for _, middleware := range route.GetAfterMiddlewares() {
-		name := GetMiddlewareName(middleware)
+		name := middleware.GetName()
+		if name == "" {
+			name = "<anonymous>"
+		}
 		names = append(names, name+" (after)")
 	}
 	
@@ -256,25 +268,37 @@ func getCombinedMiddlewareNames(group GroupInterface, route RouteInterface) []st
 	
 	// Group before middlewares
 	for _, middleware := range group.GetBeforeMiddlewares() {
-		name := GetMiddlewareName(middleware)
+		name := middleware.GetName()
+		if name == "" {
+			name = "<anonymous>"
+		}
 		names = append(names, name+" (group-before)")
 	}
 	
 	// Route before middlewares
 	for _, middleware := range route.GetBeforeMiddlewares() {
-		name := GetMiddlewareName(middleware)
+		name := middleware.GetName()
+		if name == "" {
+			name = "<anonymous>"
+		}
 		names = append(names, name+" (route-before)")
 	}
 	
 	// Route after middlewares
 	for _, middleware := range route.GetAfterMiddlewares() {
-		name := GetMiddlewareName(middleware)
+		name := middleware.GetName()
+		if name == "" {
+			name = "<anonymous>"
+		}
 		names = append(names, name+" (route-after)")
 	}
 	
 	// Group after middlewares
 	for _, middleware := range group.GetAfterMiddlewares() {
-		name := GetMiddlewareName(middleware)
+		name := middleware.GetName()
+		if name == "" {
+			name = "<anonymous>"
+		}
 		names = append(names, name+" (group-after)")
 	}
 	

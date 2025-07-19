@@ -64,19 +64,19 @@ func (r *routerImpl) wrapWithDomainMiddlewares(route RouteInterface, domain Doma
 	// Apply route's before middlewares in order
 	for i := len(route.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
 		mw := route.GetBeforeMiddlewares()[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Apply domain's before middlewares in order
 	for i := len(domain.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
 		mw := domain.GetBeforeMiddlewares()[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Apply router's before middlewares in order
 	for i := len(r.beforeMiddlewares) - 1; i >= 0; i-- {
 		mw := r.beforeMiddlewares[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Create a final handler that wraps the chain with after middlewares
@@ -89,17 +89,17 @@ func (r *routerImpl) wrapWithDomainMiddlewares(route RouteInterface, domain Doma
 
 		// Apply route's after middlewares in reverse order
 		for _, mw := range route.GetAfterMiddlewares() {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Apply domain's after middlewares in reverse order
 		for _, mw := range domain.GetAfterMiddlewares() {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Apply router's after middlewares in reverse order
 		for _, mw := range r.afterMiddlewares {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Execute the after middlewares if any exist
@@ -121,25 +121,25 @@ func (r *routerImpl) wrapWithDomainGroupMiddlewares(route RouteInterface, group 
 	// Apply route's before middlewares in order
 	for i := len(route.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
 		mw := route.GetBeforeMiddlewares()[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Apply group's before middlewares in order
 	for i := len(group.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
 		mw := group.GetBeforeMiddlewares()[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Apply domain's before middlewares in order
 	for i := len(domain.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
 		mw := domain.GetBeforeMiddlewares()[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Apply router's before middlewares in order
 	for i := len(r.beforeMiddlewares) - 1; i >= 0; i-- {
 		mw := r.beforeMiddlewares[i]
-		handler = mw(handler)
+		handler = mw.Execute(handler)
 	}
 
 	// Create a final handler that wraps the chain with after middlewares
@@ -152,22 +152,22 @@ func (r *routerImpl) wrapWithDomainGroupMiddlewares(route RouteInterface, group 
 
 		// Apply route's after middlewares in reverse order
 		for _, mw := range route.GetAfterMiddlewares() {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Apply group's after middlewares in reverse order
 		for _, mw := range group.GetAfterMiddlewares() {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Apply domain's after middlewares in reverse order
 		for _, mw := range domain.GetAfterMiddlewares() {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Apply router's after middlewares in reverse order
 		for _, mw := range r.afterMiddlewares {
-			afterHandler = mw(afterHandler)
+			afterHandler = mw.Execute(afterHandler)
 		}
 
 		// Execute the after middlewares if any exist

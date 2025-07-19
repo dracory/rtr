@@ -15,14 +15,14 @@ func TestGroupRouting(t *testing.T) {
 	// Create a group with a prefix and middleware
 	group := rtr.NewGroup().
 		SetPrefix("/api/v1").
-		AddBeforeMiddlewares([]rtr.Middleware{
+		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 			func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("X-API-Version", "v1")
 					next.ServeHTTP(w, r)
 				})
 			},
-		})
+		}))
 
 	// Add routes to the group
 	group.AddRoute(rtr.NewRoute().
@@ -117,7 +117,7 @@ func TestNestedGroupRouting(t *testing.T) {
 	// Create a parent group
 	parentGroup := rtr.NewGroup().
 		SetPrefix("/parent").
-		AddBeforeMiddlewares([]rtr.Middleware{
+		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 			func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					parentMiddlewareCalled = true
@@ -126,12 +126,12 @@ func TestNestedGroupRouting(t *testing.T) {
 					next.ServeHTTP(w, r)
 				})
 			},
-		})
+		}))
 
 	// Create a child group
 	childGroup := rtr.NewGroup().
 		SetPrefix("/child").
-		AddBeforeMiddlewares([]rtr.Middleware{
+		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 			func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					childMiddlewareCalled = true
@@ -140,7 +140,7 @@ func TestNestedGroupRouting(t *testing.T) {
 					next.ServeHTTP(w, r)
 				})
 			},
-		})
+		}))
 
 	// Add a route to the child group
 	childGroup.AddRoute(rtr.NewRoute().

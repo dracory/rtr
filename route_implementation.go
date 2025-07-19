@@ -52,11 +52,11 @@ type routeImpl struct {
 	// name is an optional identifier for this route, useful for route generation and debugging
 	name string
 
-	// beforeMiddlewares are middleware functions that will be executed before the route handler
-	beforeMiddlewares []Middleware
+	// beforeMiddlewares are middleware that will be executed before the route handler
+	beforeMiddlewares []MiddlewareInterface
 
-	// afterMiddlewares are middleware functions that will be executed after the route handler
-	afterMiddlewares []Middleware
+	// afterMiddlewares are middleware that will be executed after the route handler
+	afterMiddlewares []MiddlewareInterface
 }
 
 var _ RouteInterface = (*routeImpl)(nil)
@@ -311,33 +311,33 @@ func (r *routeImpl) SetName(name string) RouteInterface {
 	return r
 }
 
-// AddBeforeMiddlewares adds middleware functions to be executed before the route handler.
+// AddBeforeMiddlewares adds middleware to be executed before the route handler.
 // This method supports method chaining by returning the RouteInterface.
-// The middleware parameter should be a slice of Middleware functions.
-// These middleware functions will be executed in the order they are added.
-func (r *routeImpl) AddBeforeMiddlewares(middleware []Middleware) RouteInterface {
+// The middleware parameter should be a slice of MiddlewareInterface implementations.
+// These middleware will be executed in the order they are added.
+func (r *routeImpl) AddBeforeMiddlewares(middleware []MiddlewareInterface) RouteInterface {
 	r.beforeMiddlewares = append(r.beforeMiddlewares, middleware...)
 	return r
 }
 
-// GetBeforeMiddlewares returns all middleware functions that will be executed before the route handler.
-// Returns a slice of Middleware functions in the order they will be executed.
-func (r *routeImpl) GetBeforeMiddlewares() []Middleware {
+// GetBeforeMiddlewares returns all middleware that will be executed before the route handler.
+// Returns a slice of MiddlewareInterface implementations in the order they will be executed.
+func (r *routeImpl) GetBeforeMiddlewares() []MiddlewareInterface {
 	return r.beforeMiddlewares
 }
 
-// AddAfterMiddlewares adds middleware functions to be executed after the route handler.
+// AddAfterMiddlewares adds middleware to be executed after the route handler.
 // This method supports method chaining by returning the RouteInterface.
-// The middleware parameter should be a slice of Middleware functions.
-// These middleware functions will be executed in the order they are added.
-func (r *routeImpl) AddAfterMiddlewares(middleware []Middleware) RouteInterface {
+// The middleware parameter should be a slice of MiddlewareInterface implementations.
+// These middleware will be executed in the order they are added.
+func (r *routeImpl) AddAfterMiddlewares(middleware []MiddlewareInterface) RouteInterface {
 	r.afterMiddlewares = append(r.afterMiddlewares, middleware...)
 	return r
 }
 
-// GetAfterMiddlewares returns all middleware functions that will be executed after the route handler.
-// Returns a slice of Middleware functions in the order they will be executed.
-func (r *routeImpl) GetAfterMiddlewares() []Middleware {
+// GetAfterMiddlewares returns all middleware that will be executed after the route handler.
+// Returns a slice of MiddlewareInterface implementations in the order they will be executed.
+func (r *routeImpl) GetAfterMiddlewares() []MiddlewareInterface {
 	return r.afterMiddlewares
 }
 

@@ -18,7 +18,7 @@ func NewRouter() RouterInterface {
 	}
 
 	// Add recovery middleware by default
-	r.AddBeforeMiddlewares(DefaultMiddlewares())
+	r.AddBeforeMiddlewares(MiddlewaresToInterfaces(DefaultMiddlewares()))
 	return r
 }
 
@@ -40,9 +40,9 @@ type routerImpl struct {
 	routes            []RouteInterface
 	groups            []GroupInterface
 	domains           []DomainInterface
-	beforeMiddlewares []Middleware
+	beforeMiddlewares []MiddlewareInterface
 	// afterMiddlewares are middleware functions that will be executed after any route handler
-	afterMiddlewares []Middleware
+	afterMiddlewares []MiddlewareInterface
 }
 
 var _ RouterInterface = (*routerImpl)(nil)
@@ -100,31 +100,31 @@ func (r *routerImpl) GetRoutes() []RouteInterface {
 	return r.routes
 }
 
-// AddBeforeMiddlewares adds middleware functions to be executed before any route handler.
-// The middleware functions will be executed in the order they are added.
+// AddBeforeMiddlewares adds middleware to be executed before any route handler.
+// The middleware will be executed in the order they are added.
 // Returns the router for method chaining.
-func (r *routerImpl) AddBeforeMiddlewares(middleware []Middleware) RouterInterface {
+func (r *routerImpl) AddBeforeMiddlewares(middleware []MiddlewareInterface) RouterInterface {
 	r.beforeMiddlewares = append(r.beforeMiddlewares, middleware...)
 	return r
 }
 
-// GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler.
-// Returns a slice of Middleware functions.
-func (r *routerImpl) GetBeforeMiddlewares() []Middleware {
+// GetBeforeMiddlewares returns all middleware that will be executed before any route handler.
+// Returns a slice of MiddlewareInterface.
+func (r *routerImpl) GetBeforeMiddlewares() []MiddlewareInterface {
 	return r.beforeMiddlewares
 }
 
-// AddAfterMiddlewares adds middleware functions to be executed after any route handler.
-// The middleware functions will be executed in reverse order of how they were added.
+// AddAfterMiddlewares adds middleware to be executed after any route handler.
+// The middleware will be executed in reverse order of how they were added.
 // Returns the router for method chaining.
-func (r *routerImpl) AddAfterMiddlewares(middleware []Middleware) RouterInterface {
+func (r *routerImpl) AddAfterMiddlewares(middleware []MiddlewareInterface) RouterInterface {
 	r.afterMiddlewares = append(r.afterMiddlewares, middleware...)
 	return r
 }
 
-// GetAfterMiddlewares returns all middleware functions that will be executed after any route handler.
-// Returns a slice of Middleware functions.
-func (r *routerImpl) GetAfterMiddlewares() []Middleware {
+// GetAfterMiddlewares returns all middleware that will be executed after any route handler.
+// Returns a slice of MiddlewareInterface.
+func (r *routerImpl) GetAfterMiddlewares() []MiddlewareInterface {
 	return r.afterMiddlewares
 }
 
@@ -285,8 +285,8 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 	for _, subgroup := range group.GetGroups() {
 		// Create a new group that includes the current group's middlewares
 		nestedGroup := &groupImpl{
-			prefix:            subgroup.GetPrefix(),
-			routes:            subgroup.GetRoutes(),
+			prefix:                 subgroup.GetPrefix(),
+			routes:                 subgroup.GetRoutes(),
 			groups:            subgroup.GetGroups(),
 			beforeMiddlewares: append(group.GetBeforeMiddlewares(), subgroup.GetBeforeMiddlewares()...),
 			afterMiddlewares:  append(group.GetAfterMiddlewares(), subgroup.GetAfterMiddlewares()...),
@@ -342,24 +342,32 @@ func (r *routerImpl) wrapWithMiddlewares(route RouteInterface, req *http.Request
 		route.GetHandler()(w, req)
 	})
 
-	// Apply route's after middlewares (in reverse order)
-	for i := len(route.GetAfterMiddlewares()) - 1; i >= 0; i-- {
-		handler = route.GetAfterMiddlewares()[i](handler)
+	// Collect all middlewares (route + router)
+	var allMiddlewares []MiddlewareInterface
+
+	// Add route's middlewares (already MiddlewareInterface)
+	allMiddlewares = append(allMiddlewares, route.GetBeforeMiddlewares()...)
+
+	// Add router's before middlewares (already MiddlewareInterface)
+	allMiddlewares = append(allMiddlewares, r.beforeMiddlewares...)
+
+	// Apply before middlewares (in reverse order so they execute in the order they were added)
+	for i := len(allMiddlewares) - 1; i >= 0; i-- {
+		handler = allMiddlewares[i].Execute(handler)
 	}
 
-	// Apply router's after middlewares (in reverse order)
-	for i := len(r.afterMiddlewares) - 1; i >= 0; i-- {
-		handler = r.afterMiddlewares[i](handler)
-	}
+	// Collect after middlewares
+	var afterMiddlewares []MiddlewareInterface
 
-	// Apply route's before middlewares
-	for _, middleware := range route.GetBeforeMiddlewares() {
-		handler = middleware(handler)
-	}
+	// Add route's after middlewares (already MiddlewareInterface)
+	afterMiddlewares = append(afterMiddlewares, route.GetAfterMiddlewares()...)
 
-	// Apply router's before middlewares
-	for _, middleware := range r.beforeMiddlewares {
-		handler = middleware(handler)
+	// Add router's after middlewares (already MiddlewareInterface)
+	afterMiddlewares = append(afterMiddlewares, r.afterMiddlewares...)
+
+	// Apply after middlewares (in reverse order)
+	for i := len(afterMiddlewares) - 1; i >= 0; i-- {
+		handler = afterMiddlewares[i].Execute(handler)
 	}
 
 	return handler
@@ -374,19 +382,21 @@ func (r *routerImpl) wrapWithGroupMiddlewares(route RouteInterface, group GroupI
 		route.GetHandler()(w, req)
 	})
 
-	// Apply route's before middlewares (innermost to route handler)
-	for _, middleware := range route.GetBeforeMiddlewares() {
-		handler = middleware(handler)
-	}
+	// Collect before middlewares in execution order (route -> group -> router)
+	var beforeMiddlewares []MiddlewareInterface
 
-	// Apply group's before middlewares
-	for _, middleware := range group.GetBeforeMiddlewares() {
-		handler = middleware(handler)
-	}
+	// Add route's before middlewares (already MiddlewareInterface)
+	beforeMiddlewares = append(beforeMiddlewares, route.GetBeforeMiddlewares()...)
 
-	// Apply router's before middlewares (outermost)
-	for _, middleware := range r.beforeMiddlewares {
-		handler = middleware(handler)
+	// Add group's before middlewares (already MiddlewareInterface)
+	beforeMiddlewares = append(beforeMiddlewares, group.GetBeforeMiddlewares()...)
+
+	// Add router's before middlewares (already MiddlewareInterface)
+	beforeMiddlewares = append(beforeMiddlewares, r.beforeMiddlewares...)
+
+	// Apply before middlewares (in reverse order so they execute in the order they were added)
+	for i := len(beforeMiddlewares) - 1; i >= 0; i-- {
+		handler = beforeMiddlewares[i].Execute(handler)
 	}
 
 	return handler

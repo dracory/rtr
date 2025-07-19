@@ -117,14 +117,14 @@ func TestDomain_Middleware(t *testing.T) {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	}
 
-	d.AddBeforeMiddlewares([]rtr.Middleware{mw1, mw2})
+	d.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{mw1, mw2}))
 	beforeMiddlewares := d.GetBeforeMiddlewares()
 	if len(beforeMiddlewares) != 2 {
 		t.Errorf("expected 2 before middlewares, got %d", len(beforeMiddlewares))
 	}
 
 	// Test after middlewares
-	d.AddAfterMiddlewares([]rtr.Middleware{mw1})
+	d.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{mw1}))
 	afterMiddlewares := d.GetAfterMiddlewares()
 	if len(afterMiddlewares) != 1 {
 		t.Errorf("expected 1 after middleware, got %d", len(afterMiddlewares))

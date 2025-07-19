@@ -14,13 +14,13 @@ func TestList(t *testing.T) {
 	router := rtr.NewRouter()
 
 	// Add some middleware
-	router.AddBeforeMiddlewares([]rtr.Middleware{
+	router.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 		func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				next.ServeHTTP(w, r)
 			})
 		},
-	})
+	}))
 
 	// Add direct routes
 	router.AddRoute(rtr.NewRoute().
@@ -50,13 +50,13 @@ func TestList(t *testing.T) {
 		}))
 
 	// Add middleware to the group
-	apiGroup.AddBeforeMiddlewares([]rtr.Middleware{
+	apiGroup.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 		func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				next.ServeHTTP(w, r)
 			})
 		},
-	})
+	}))
 
 	router.AddGroup(apiGroup)
 
@@ -123,12 +123,12 @@ func TestRouteMiddlewareNames(t *testing.T) {
 	}
 
 	// Add some middleware
-	route.AddBeforeMiddlewares([]rtr.Middleware{
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 		func(next http.Handler) http.Handler { return next },
-	})
-	route.AddAfterMiddlewares([]rtr.Middleware{
+	}))
+	route.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 		func(next http.Handler) http.Handler { return next },
-	})
+	}))
 
 	names = rtr.GetRouteMiddlewareNames(route)
 	if len(names) != 2 {

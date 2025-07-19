@@ -264,7 +264,7 @@ func TestRouterWithBeforeMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddBeforeMiddlewares([]rtr.Middleware{headerMiddleware})
+	r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{headerMiddleware}))
 
 	// Add a route
 	route := rtr.NewRoute().
@@ -321,7 +321,7 @@ func TestRouterWithAfterMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddAfterMiddlewares([]rtr.Middleware{responseMiddleware})
+	r.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{responseMiddleware}))
 
 	// Add a route
 	route := rtr.NewRoute().
@@ -382,7 +382,7 @@ func TestRouterWithRouteMiddleware(t *testing.T) {
 			next.ServeHTTP(w, r)
 		})
 	})
-	route.AddBeforeMiddlewares([]rtr.Middleware{routeMiddleware})
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{routeMiddleware}))
 
 	// Add the route to the router
 	r.AddRoute(route)
@@ -432,7 +432,7 @@ func TestRouterWithGroupMiddleware(t *testing.T) {
 			next.ServeHTTP(w, r)
 		})
 	}
-	group.AddBeforeMiddlewares([]rtr.Middleware{groupMiddleware})
+	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{groupMiddleware}))
 
 	// Add a route to the group
 	route := rtr.NewRoute().

@@ -10,8 +10,8 @@ type domainImpl struct {
 	patterns          []string
 	routes            []RouteInterface
 	groups            []GroupInterface
-	beforeMiddlewares []Middleware
-	afterMiddlewares  []Middleware
+	beforeMiddlewares []MiddlewareInterface
+	afterMiddlewares  []MiddlewareInterface
 }
 
 var _ DomainInterface = (*domainImpl)(nil)
@@ -72,25 +72,25 @@ func (d *domainImpl) GetGroups() []GroupInterface {
 
 // AddBeforeMiddlewares adds middleware functions to be executed before any route handler in this domain
 // Returns the domain for method chaining
-func (d *domainImpl) AddBeforeMiddlewares(middleware []Middleware) DomainInterface {
+func (d *domainImpl) AddBeforeMiddlewares(middleware []MiddlewareInterface) DomainInterface {
 	d.beforeMiddlewares = append(d.beforeMiddlewares, middleware...)
 	return d
 }
 
 // GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler in this domain
-func (d *domainImpl) GetBeforeMiddlewares() []Middleware {
+func (d *domainImpl) GetBeforeMiddlewares() []MiddlewareInterface {
 	return d.beforeMiddlewares
 }
 
 // AddAfterMiddlewares adds middleware functions to be executed after any route handler in this domain
 // Returns the domain for method chaining
-func (d *domainImpl) AddAfterMiddlewares(middleware []Middleware) DomainInterface {
+func (d *domainImpl) AddAfterMiddlewares(middleware []MiddlewareInterface) DomainInterface {
 	d.afterMiddlewares = append(d.afterMiddlewares, middleware...)
 	return d
 }
 
 // GetAfterMiddlewares returns all middleware functions that will be executed after any route handler in this domain
-func (d *domainImpl) GetAfterMiddlewares() []Middleware {
+func (d *domainImpl) GetAfterMiddlewares() []MiddlewareInterface {
 	return d.afterMiddlewares
 }
 

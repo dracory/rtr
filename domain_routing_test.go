@@ -200,7 +200,7 @@ func TestDomainRoutingWithMiddleware(t *testing.T) {
 		})
 	}
 
-	domain.AddBeforeMiddlewares([]rtr.Middleware{middleware})
+	domain.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware}))
 
 	// Add a test route
 	domain.AddRoute(rtr.NewRoute().

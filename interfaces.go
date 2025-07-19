@@ -51,6 +51,28 @@ type JSHandler StringHandler
 // Middleware functions can be used to process requests before or after they reach the main handler.
 type Middleware func(http.Handler) http.Handler
 
+// MiddlewareInterface defines the interface for named middleware.
+// It provides a way to associate a name with middleware for better debugging and documentation.
+type MiddlewareInterface interface {
+	// GetName returns the name identifier associated with this middleware.
+	// Returns the string name of the middleware, which may be empty for anonymous middleware.
+	GetName() string
+	// SetName sets the name identifier for this middleware and returns the middleware for method chaining.
+	// The name parameter can be used for middleware identification and debugging.
+	SetName(name string) MiddlewareInterface
+
+	// GetHandler returns the underlying middleware function.
+	// Returns the Middleware function that will be executed.
+	GetHandler() Middleware
+	// SetHandler sets the middleware function and returns the middleware for method chaining.
+	// The handler parameter should be a valid Middleware function.
+	SetHandler(handler Middleware) MiddlewareInterface
+
+	// Execute applies the middleware to the given handler.
+	// This is equivalent to calling GetHandler()(next).
+	Execute(next http.Handler) http.Handler
+}
+
 // RouteInterface defines the interface for a single route definition.
 // A route represents a mapping between an HTTP method, a URL path pattern, and a handler function.
 // Routes can also have associated middleware that will be executed before or after the handler.
@@ -117,15 +139,17 @@ type RouteInterface interface {
 
 	// AddBeforeMiddlewares adds middleware functions to be executed before the route handler.
 	// Returns the route for method chaining.
-	AddBeforeMiddlewares(middleware []Middleware) RouteInterface
+	AddBeforeMiddlewares(middleware []MiddlewareInterface) RouteInterface
 	// GetBeforeMiddlewares returns all middleware functions that will be executed before the route handler.
-	GetBeforeMiddlewares() []Middleware
+	GetBeforeMiddlewares() []MiddlewareInterface
 
 	// AddAfterMiddlewares adds middleware functions to be executed after the route handler.
 	// Returns the route for method chaining.
-	AddAfterMiddlewares(middleware []Middleware) RouteInterface
+	AddAfterMiddlewares(middleware []MiddlewareInterface) RouteInterface
 	// GetAfterMiddlewares returns all middleware functions that will be executed after the route handler.
-	GetAfterMiddlewares() []Middleware
+	GetAfterMiddlewares() []MiddlewareInterface
+
+
 }
 
 // GroupInterface defines the interface for a group of routes.
@@ -151,17 +175,18 @@ type GroupInterface interface {
 	// GetGroups returns all nested groups that belong to this group.
 	GetGroups() []GroupInterface
 
-	// AddBeforeMiddlewares adds middleware functions to be executed before any route handler in this group.
+	// AddBeforeMiddlewares adds middleware to be executed before any route handler in this group.
 	// Returns the group for method chaining.
-	AddBeforeMiddlewares(middleware []Middleware) GroupInterface
-	// GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler in this group.
-	GetBeforeMiddlewares() []Middleware
+	AddBeforeMiddlewares(middleware []MiddlewareInterface) GroupInterface
+	// GetBeforeMiddlewares returns all middleware that will be executed before any route handler in this group.
+	GetBeforeMiddlewares() []MiddlewareInterface
 
-	// AddAfterMiddlewares adds middleware functions to be executed after any route handler in this group.
-	// Returns the group for method chaining.
-	AddAfterMiddlewares(middleware []Middleware) GroupInterface
-	// GetAfterMiddlewares returns all middleware functions that will be executed after any route handler in this group.
-	GetAfterMiddlewares() []Middleware
+	// AddAfterMiddlewares adds middleware to be executed after any route handler in this group
+	// Returns the group for method chaining
+	AddAfterMiddlewares(middleware []MiddlewareInterface) GroupInterface
+
+	// GetAfterMiddlewares returns all middleware that will be executed after any route handler in this group
+	GetAfterMiddlewares() []MiddlewareInterface
 }
 
 // DomainInterface defines the interface for a domain that can have routes and groups.
@@ -194,17 +219,17 @@ type DomainInterface interface {
 
 	// AddBeforeMiddlewares adds middleware functions to be executed before any route handler in this domain
 	// Returns the domain for method chaining
-	AddBeforeMiddlewares(middleware []Middleware) DomainInterface
+	AddBeforeMiddlewares(middleware []MiddlewareInterface) DomainInterface
 
 	// GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler in this domain
-	GetBeforeMiddlewares() []Middleware
+	GetBeforeMiddlewares() []MiddlewareInterface
 
 	// AddAfterMiddlewares adds middleware functions to be executed after any route handler in this domain
 	// Returns the domain for method chaining
-	AddAfterMiddlewares(middleware []Middleware) DomainInterface
+	AddAfterMiddlewares(middleware []MiddlewareInterface) DomainInterface
 
 	// GetAfterMiddlewares returns all middleware functions that will be executed after any route handler in this domain
-	GetAfterMiddlewares() []Middleware
+	GetAfterMiddlewares() []MiddlewareInterface
 
 	// Match checks if the given host matches any of this domain's patterns
 	Match(host string) bool
@@ -240,21 +265,21 @@ type RouterInterface interface {
 	// Returns a slice of RouteInterface implementations.
 	GetRoutes() []RouteInterface
 
-	// AddBeforeMiddlewares adds middleware functions to be executed before any route handler.
-	// The middleware functions will be executed in the order they are added.
+	// AddBeforeMiddlewares adds middleware to be executed before any route handler.
+	// The middleware will be executed in the order they are added.
 	// Returns the router for method chaining.
-	AddBeforeMiddlewares(middleware []Middleware) RouterInterface
-	// GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler.
-	// Returns a slice of Middleware functions.
-	GetBeforeMiddlewares() []Middleware
+	AddBeforeMiddlewares(middleware []MiddlewareInterface) RouterInterface
+	// GetBeforeMiddlewares returns all middleware that will be executed before any route handler.
+	// Returns a slice of MiddlewareInterface.
+	GetBeforeMiddlewares() []MiddlewareInterface
 
-	// AddAfterMiddlewares adds middleware functions to be executed after any route handler.
-	// The middleware functions will be executed in reverse order of how they were added.
+	// AddAfterMiddlewares adds middleware to be executed after any route handler.
+	// The middleware will be executed in reverse order of how they were added.
 	// Returns the router for method chaining.
-	AddAfterMiddlewares(middleware []Middleware) RouterInterface
-	// GetAfterMiddlewares returns all middleware functions that will be executed after any route handler.
-	// Returns a slice of Middleware functions.
-	GetAfterMiddlewares() []Middleware
+	AddAfterMiddlewares(middleware []MiddlewareInterface) RouterInterface
+	// GetAfterMiddlewares returns all middleware that will be executed after any route handler.
+	// Returns a slice of MiddlewareInterface.
+	GetAfterMiddlewares() []MiddlewareInterface
 
 	// AddDomain adds a domain to this router and returns the router for method chaining
 	AddDomain(domain DomainInterface) RouterInterface

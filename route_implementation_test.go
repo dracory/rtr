@@ -55,23 +55,23 @@ func TestRouteInterface(t *testing.T) {
 	})
 
 	// Test before middlewares
-	route.AddBeforeMiddlewares([]rtr.Middleware{middleware1})
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware1}))
 	if len(route.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(route.GetBeforeMiddlewares()))
 	}
 
-	route.AddBeforeMiddlewares([]rtr.Middleware{middleware2})
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware2}))
 	if len(route.GetBeforeMiddlewares()) != 2 {
 		t.Errorf("Expected 2 before middlewares, got %d", len(route.GetBeforeMiddlewares()))
 	}
 
 	// Test after middlewares
-	route.AddAfterMiddlewares([]rtr.Middleware{middleware1})
+	route.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware1}))
 	if len(route.GetAfterMiddlewares()) != 1 {
 		t.Errorf("Expected 1 after middleware, got %d", len(route.GetAfterMiddlewares()))
 	}
 
-	route.AddAfterMiddlewares([]rtr.Middleware{middleware2})
+	route.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware2}))
 	if len(route.GetAfterMiddlewares()) != 2 {
 		t.Errorf("Expected 2 after middlewares, got %d", len(route.GetAfterMiddlewares()))
 	}
@@ -107,8 +107,8 @@ func TestRouteChaining(t *testing.T) {
 	// Test middleware chaining
 	middleware := func(next http.Handler) http.Handler { return next }
 
-	route.AddBeforeMiddlewares([]rtr.Middleware{middleware}).
-		AddAfterMiddlewares([]rtr.Middleware{middleware})
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware})).
+		AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware}))
 
 	if len(route.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(route.GetBeforeMiddlewares()))
@@ -206,13 +206,13 @@ func TestRouteWithMiddlewares(t *testing.T) {
 	}
 
 	// Add middlewares to the route
-	route.AddBeforeMiddlewares([]rtr.Middleware{
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 		rtr.Middleware(middleware1),
 		rtr.Middleware(middleware2),
-	})
-	route.AddAfterMiddlewares([]rtr.Middleware{
+	}))
+	route.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
 		rtr.Middleware(middleware3),
-	})
+	}))
 
 	// Check middleware counts
 	if len(route.GetBeforeMiddlewares()) != 2 {

@@ -11,23 +11,27 @@ type RouteConfig struct {
 	JSONHandler      JSONHandler            `json:"-"`
 	CSSHandler       CSSHandler             `json:"-"`
 	XMLHandler       XMLHandler             `json:"-"`
-	TextHandler      TextHandler            `json:"-"`
-	BeforeMiddleware []Middleware           `json:"-"`
-	AfterMiddleware  []Middleware           `json:"-"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	TextHandler           TextHandler            `json:"-"`
+	BeforeMiddleware      []MiddlewareInterface  `json:"-"`
+	AfterMiddleware       []MiddlewareInterface  `json:"-"`
+	NamedBeforeMiddleware []MiddlewareInterface  `json:"-"`
+	NamedAfterMiddleware  []MiddlewareInterface  `json:"-"`
+	Metadata              map[string]interface{} `json:"metadata,omitempty"`
 }
 
 var _ RouteInterface = (*RouteConfig)(nil)
 
 // GroupConfig represents a declarative group configuration
 type GroupConfig struct {
-	Name             string                 `json:"name,omitempty"`
-	Prefix           string                 `json:"prefix"`
-	Routes           []RouteConfig          `json:"routes,omitempty"`
-	Groups           []GroupConfig          `json:"groups,omitempty"`
-	BeforeMiddleware []Middleware           `json:"-"`
-	AfterMiddleware  []Middleware           `json:"-"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	Name                  string                 `json:"name,omitempty"`
+	Prefix                string                 `json:"prefix"`
+	Routes                []RouteConfig          `json:"routes,omitempty"`
+	Groups                []GroupConfig          `json:"groups,omitempty"`
+	BeforeMiddleware      []Middleware           `json:"-"`
+	AfterMiddleware       []Middleware           `json:"-"`
+	NamedBeforeMiddleware []MiddlewareInterface  `json:"-"`
+	NamedAfterMiddleware  []MiddlewareInterface  `json:"-"`
+	Metadata              map[string]interface{} `json:"metadata,omitempty"`
 }
 
 var _ GroupInterface = (*GroupConfig)(nil)
@@ -38,8 +42,8 @@ type DomainConfig struct {
 	Patterns         []string               `json:"patterns"`
 	Routes           []RouteConfig          `json:"routes,omitempty"`
 	Groups           []GroupConfig          `json:"groups,omitempty"`
-	BeforeMiddleware []Middleware           `json:"-"`
-	AfterMiddleware  []Middleware           `json:"-"`
+	BeforeMiddleware []MiddlewareInterface  `json:"-"`
+	AfterMiddleware  []MiddlewareInterface  `json:"-"`
 	Metadata         map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -66,10 +70,10 @@ func NewRouterFromConfig(config RouterConfig) RouterInterface {
 
 	// Add global middleware
 	if len(config.BeforeMiddleware) > 0 {
-		router.AddBeforeMiddlewares(config.BeforeMiddleware)
+		router.AddBeforeMiddlewares(MiddlewaresToInterfaces(config.BeforeMiddleware))
 	}
 	if len(config.AfterMiddleware) > 0 {
-		router.AddAfterMiddlewares(config.AfterMiddleware)
+		router.AddAfterMiddlewares(MiddlewaresToInterfaces(config.AfterMiddleware))
 	}
 
 	// Add direct routes
@@ -142,10 +146,10 @@ func buildGroupFromConfig(config GroupConfig) GroupInterface {
 		group.SetPrefix(config.Prefix)
 	}
 	if len(config.BeforeMiddleware) > 0 {
-		group.AddBeforeMiddlewares(config.BeforeMiddleware)
+		group.AddBeforeMiddlewares(MiddlewaresToInterfaces(config.BeforeMiddleware))
 	}
 	if len(config.AfterMiddleware) > 0 {
-		group.AddAfterMiddlewares(config.AfterMiddleware)
+		group.AddAfterMiddlewares(MiddlewaresToInterfaces(config.AfterMiddleware))
 	}
 
 	// Add routes to group
@@ -253,13 +257,13 @@ func (r RouteConfig) WithName(name string) RouteConfig {
 
 // WithBeforeMiddleware adds before middleware to a route configuration
 func (r RouteConfig) WithBeforeMiddleware(middleware ...Middleware) RouteConfig {
-	r.BeforeMiddleware = append(r.BeforeMiddleware, middleware...)
+	r.BeforeMiddleware = append(r.BeforeMiddleware, MiddlewaresToInterfaces(middleware)...)
 	return r
 }
 
 // WithAfterMiddleware adds after middleware to a route configuration
 func (r RouteConfig) WithAfterMiddleware(middleware ...Middleware) RouteConfig {
-	r.AfterMiddleware = append(r.AfterMiddleware, middleware...)
+	r.AfterMiddleware = append(r.AfterMiddleware, MiddlewaresToInterfaces(middleware)...)
 	return r
 }
 
@@ -488,24 +492,24 @@ func (r *RouteConfig) SetMetadata(metadata map[string]interface{}) RouteInterfac
 }
 
 // AddBeforeMiddlewares adds middleware functions to be executed before the route handler.
-func (r *RouteConfig) AddBeforeMiddlewares(middleware []Middleware) RouteInterface {
+func (r *RouteConfig) AddBeforeMiddlewares(middleware []MiddlewareInterface) RouteInterface {
 	r.BeforeMiddleware = append(r.BeforeMiddleware, middleware...)
 	return r
 }
 
 // GetBeforeMiddlewares returns all middleware functions that will be executed before the route handler.
-func (r *RouteConfig) GetBeforeMiddlewares() []Middleware {
+func (r *RouteConfig) GetBeforeMiddlewares() []MiddlewareInterface {
 	return r.BeforeMiddleware
 }
 
 // AddAfterMiddlewares adds middleware functions to be executed after the route handler.
-func (r *RouteConfig) AddAfterMiddlewares(middleware []Middleware) RouteInterface {
+func (r *RouteConfig) AddAfterMiddlewares(middleware []MiddlewareInterface) RouteInterface {
 	r.AfterMiddleware = append(r.AfterMiddleware, middleware...)
 	return r
 }
 
 // GetAfterMiddlewares returns all middleware functions that will be executed after the route handler.
-func (r *RouteConfig) GetAfterMiddlewares() []Middleware {
+func (r *RouteConfig) GetAfterMiddlewares() []MiddlewareInterface {
 	return r.AfterMiddleware
 }
 
@@ -574,11 +578,11 @@ func (g *GroupConfig) AddGroup(group GroupInterface) GroupInterface {
 	} else {
 		// Create a new GroupConfig from the GroupInterface
 		groupConfig := GroupConfig{
-			Prefix:           group.GetPrefix(),
-			Routes:           []RouteConfig{},
-			Groups:           []GroupConfig{},
-			BeforeMiddleware: group.GetBeforeMiddlewares(),
-			AfterMiddleware:  group.GetAfterMiddlewares(),
+			Prefix:                group.GetPrefix(),
+			Routes:                []RouteConfig{},
+			Groups:                []GroupConfig{},
+			NamedBeforeMiddleware: group.GetBeforeMiddlewares(),
+			NamedAfterMiddleware:  group.GetAfterMiddlewares(),
 		}
 		// Convert routes
 		for _, route := range group.GetRoutes() {
@@ -611,25 +615,25 @@ func (g *GroupConfig) GetGroups() []GroupInterface {
 }
 
 // AddBeforeMiddlewares adds middleware functions to be executed before any route handler in this group.
-func (g *GroupConfig) AddBeforeMiddlewares(middleware []Middleware) GroupInterface {
-	g.BeforeMiddleware = append(g.BeforeMiddleware, middleware...)
+func (g *GroupConfig) AddBeforeMiddlewares(middleware []MiddlewareInterface) GroupInterface {
+	g.NamedBeforeMiddleware = append(g.NamedBeforeMiddleware, middleware...)
 	return g
 }
 
 // GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler in this group.
-func (g *GroupConfig) GetBeforeMiddlewares() []Middleware {
-	return g.BeforeMiddleware
+func (g *GroupConfig) GetBeforeMiddlewares() []MiddlewareInterface {
+	return g.NamedBeforeMiddleware
 }
 
 // AddAfterMiddlewares adds middleware functions to be executed after any route handler in this group.
-func (g *GroupConfig) AddAfterMiddlewares(middleware []Middleware) GroupInterface {
-	g.AfterMiddleware = append(g.AfterMiddleware, middleware...)
+func (g *GroupConfig) AddAfterMiddlewares(middleware []MiddlewareInterface) GroupInterface {
+	g.NamedAfterMiddleware = append(g.NamedAfterMiddleware, middleware...)
 	return g
 }
 
 // GetAfterMiddlewares returns all middleware functions that will be executed after any route handler in this group.
-func (g *GroupConfig) GetAfterMiddlewares() []Middleware {
-	return g.AfterMiddleware
+func (g *GroupConfig) GetAfterMiddlewares() []MiddlewareInterface {
+	return g.NamedAfterMiddleware
 }
 
 // DomainInterface implementation for DomainConfig
@@ -697,11 +701,11 @@ func (d *DomainConfig) AddGroup(group GroupInterface) DomainInterface {
 	} else {
 		// Create a new GroupConfig from the GroupInterface
 		groupConfig := GroupConfig{
-			Prefix:           group.GetPrefix(),
-			Routes:           []RouteConfig{},
-			Groups:           []GroupConfig{},
-			BeforeMiddleware: group.GetBeforeMiddlewares(),
-			AfterMiddleware:  group.GetAfterMiddlewares(),
+			Prefix:                group.GetPrefix(),
+			Routes:                []RouteConfig{},
+			Groups:                []GroupConfig{},
+			NamedBeforeMiddleware: group.GetBeforeMiddlewares(),
+			NamedAfterMiddleware:  group.GetAfterMiddlewares(),
 		}
 		// Convert routes
 		for _, route := range group.GetRoutes() {
@@ -734,24 +738,24 @@ func (d *DomainConfig) GetGroups() []GroupInterface {
 }
 
 // AddBeforeMiddlewares adds middleware functions to be executed before any route handler in this domain
-func (d *DomainConfig) AddBeforeMiddlewares(middleware []Middleware) DomainInterface {
+func (d *DomainConfig) AddBeforeMiddlewares(middleware []MiddlewareInterface) DomainInterface {
 	d.BeforeMiddleware = append(d.BeforeMiddleware, middleware...)
 	return d
 }
 
 // GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler in this domain
-func (d *DomainConfig) GetBeforeMiddlewares() []Middleware {
+func (d *DomainConfig) GetBeforeMiddlewares() []MiddlewareInterface {
 	return d.BeforeMiddleware
 }
 
 // AddAfterMiddlewares adds middleware functions to be executed after any route handler in this domain
-func (d *DomainConfig) AddAfterMiddlewares(middleware []Middleware) DomainInterface {
+func (d *DomainConfig) AddAfterMiddlewares(middleware []MiddlewareInterface) DomainInterface {
 	d.AfterMiddleware = append(d.AfterMiddleware, middleware...)
 	return d
 }
 
 // GetAfterMiddlewares returns all middleware functions that will be executed after any route handler in this domain
-func (d *DomainConfig) GetAfterMiddlewares() []Middleware {
+func (d *DomainConfig) GetAfterMiddlewares() []MiddlewareInterface {
 	return d.AfterMiddleware
 }
 
@@ -768,3 +772,7 @@ func (d *DomainConfig) Match(host string) bool {
 	}
 	return false
 }
+
+
+
+

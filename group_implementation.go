@@ -13,10 +13,10 @@ type groupImpl struct {
 	// groups contains all the nested groups that belong to this group
 	groups []GroupInterface
 
-	// beforeMiddlewares are middleware functions that will be executed before any route handler in this group
-	beforeMiddlewares []Middleware
-	// afterMiddlewares are middleware functions that will be executed after any route handler in this group
-	afterMiddlewares []Middleware
+	// beforeMiddlewares are middleware that will be executed before any route handler in this group
+	beforeMiddlewares []MiddlewareInterface
+	// afterMiddlewares are middleware that will be executed after any route handler in this group
+	afterMiddlewares []MiddlewareInterface
 }
 
 var _ GroupInterface = (*groupImpl)(nil)
@@ -79,33 +79,33 @@ func (g *groupImpl) GetGroups() []GroupInterface {
 	return g.groups
 }
 
-// AddBeforeMiddlewares adds middleware functions to be executed before any route handler in this group.
+// AddBeforeMiddlewares adds middleware to be executed before any route handler in this group.
 // This method supports method chaining by returning the GroupInterface.
-// The middleware parameter should be a slice of Middleware functions.
-// These middleware functions will be executed in the order they are added.
-func (g *groupImpl) AddBeforeMiddlewares(middleware []Middleware) GroupInterface {
+// The middleware parameter should be a slice of MiddlewareInterface.
+// These middleware will be executed in the order they are added.
+func (g *groupImpl) AddBeforeMiddlewares(middleware []MiddlewareInterface) GroupInterface {
 	g.beforeMiddlewares = append(g.beforeMiddlewares, middleware...)
 	return g
 }
 
-// GetBeforeMiddlewares returns all middleware functions that will be executed before any route handler in this group.
-// Returns a slice of Middleware functions in the order they will be executed.
-func (g *groupImpl) GetBeforeMiddlewares() []Middleware {
+// GetBeforeMiddlewares returns all middleware that will be executed before any route handler in this group.
+// Returns a slice of MiddlewareInterface in the order they will be executed.
+func (g *groupImpl) GetBeforeMiddlewares() []MiddlewareInterface {
 	return g.beforeMiddlewares
 }
 
-// AddAfterMiddlewares adds middleware functions to be executed after any route handler in this group.
+// AddAfterMiddlewares adds middleware to be executed after any route handler in this group.
 // This method supports method chaining by returning the GroupInterface.
-// The middleware parameter should be a slice of Middleware functions.
-// These middleware functions will be executed in the order they are added.
-func (g *groupImpl) AddAfterMiddlewares(middleware []Middleware) GroupInterface {
+// The middleware parameter should be a slice of MiddlewareInterface.
+// These middleware will be executed in the order they are added.
+func (g *groupImpl) AddAfterMiddlewares(middleware []MiddlewareInterface) GroupInterface {
 	g.afterMiddlewares = append(g.afterMiddlewares, middleware...)
 	return g
 }
 
-// GetAfterMiddlewares returns all middleware functions that will be executed after any route handler in this group.
-// Returns a slice of Middleware functions in the order they will be executed.
-func (g *groupImpl) GetAfterMiddlewares() []Middleware {
+// GetAfterMiddlewares returns all middleware that will be executed after any route handler in this group.
+// Returns a slice of MiddlewareInterface in the order they will be executed.
+func (g *groupImpl) GetAfterMiddlewares() []MiddlewareInterface {
 	return g.afterMiddlewares
 }
 
