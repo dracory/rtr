@@ -25,6 +25,21 @@ type routeImpl struct {
 	// handler is the function that will be called when this route is matched
 	handler Handler
 
+	// htmlHandler is the HTML handler function that returns HTML string
+	htmlHandler HTMLHandler
+
+	// jsonHandler is the JSON handler function that returns JSON string
+	jsonHandler JSONHandler
+
+	// cssHandler is the CSS handler function that returns CSS string
+	cssHandler CSSHandler
+
+	// xmlHandler is the XML handler function that returns XML string
+	xmlHandler XMLHandler
+
+	// textHandler is the text handler function that returns plain text string
+	textHandler TextHandler
+
 	// name is an optional identifier for this route, useful for route generation and debugging
 	name string
 
@@ -82,8 +97,40 @@ func (r *routeImpl) SetPath(path string) RouteInterface {
 
 // GetHandler returns the handler function associated with this route.
 // Returns the Handler function that will be called when this route is matched.
+// Implements handler prioritization: Handler > HTMLHandler > JSONHandler > CSSHandler > XMLHandler > TextHandler
 func (r *routeImpl) GetHandler() Handler {
-	return r.handler
+	// Priority 1: Direct Handler
+	if r.handler != nil {
+		return r.handler
+	}
+
+	// Priority 2: HTMLHandler - convert to standard Handler
+	if r.htmlHandler != nil {
+		return ToHandler(r.htmlHandler)
+	}
+
+	// Priority 3: JSONHandler - convert to standard Handler
+	if r.jsonHandler != nil {
+		return ToHandler(r.jsonHandler)
+	}
+
+	// Priority 4: CSSHandler - convert to standard Handler
+	if r.cssHandler != nil {
+		return ToHandler(r.cssHandler)
+	}
+
+	// Priority 5: XMLHandler - convert to standard Handler
+	if r.xmlHandler != nil {
+		return ToHandler(r.xmlHandler)
+	}
+
+	// Priority 6: TextHandler - convert to standard Handler
+	if r.textHandler != nil {
+		return ToHandler(r.textHandler)
+	}
+
+	// No handler found
+	return nil
 }
 
 // SetHandler sets the handler function for this route.
@@ -91,6 +138,76 @@ func (r *routeImpl) GetHandler() Handler {
 // The handler parameter should be a function that implements the Handler interface.
 func (r *routeImpl) SetHandler(handler Handler) RouteInterface {
 	r.handler = handler
+	return r
+}
+
+// GetHTMLHandler returns the HTML handler function associated with this route.
+// Returns the HTMLHandler function that will be called when this route is matched.
+func (r *routeImpl) GetHTMLHandler() HTMLHandler {
+	return r.htmlHandler
+}
+
+// SetHTMLHandler sets the HTML handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns HTML string.
+func (r *routeImpl) SetHTMLHandler(handler HTMLHandler) RouteInterface {
+	r.htmlHandler = handler
+	return r
+}
+
+// GetJSONHandler returns the JSON handler function associated with this route.
+// Returns the JSONHandler function that will be called when this route is matched.
+func (r *routeImpl) GetJSONHandler() JSONHandler {
+	return r.jsonHandler
+}
+
+// SetJSONHandler sets the JSON handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns JSON string.
+func (r *routeImpl) SetJSONHandler(handler JSONHandler) RouteInterface {
+	r.jsonHandler = handler
+	return r
+}
+
+// GetCSSHandler returns the CSS handler function associated with this route.
+// Returns the CSSHandler function that will be called when this route is matched.
+func (r *routeImpl) GetCSSHandler() CSSHandler {
+	return r.cssHandler
+}
+
+// SetCSSHandler sets the CSS handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns CSS string.
+func (r *routeImpl) SetCSSHandler(handler CSSHandler) RouteInterface {
+	r.cssHandler = handler
+	return r
+}
+
+// GetXMLHandler returns the XML handler function associated with this route.
+// Returns the XMLHandler function that will be called when this route is matched.
+func (r *routeImpl) GetXMLHandler() XMLHandler {
+	return r.xmlHandler
+}
+
+// SetXMLHandler sets the XML handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns XML string.
+func (r *routeImpl) SetXMLHandler(handler XMLHandler) RouteInterface {
+	r.xmlHandler = handler
+	return r
+}
+
+// GetTextHandler returns the text handler function associated with this route.
+// Returns the TextHandler function that will be called when this route is matched.
+func (r *routeImpl) GetTextHandler() TextHandler {
+	return r.textHandler
+}
+
+// SetTextHandler sets the text handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns plain text string.
+func (r *routeImpl) SetTextHandler(handler TextHandler) RouteInterface {
+	r.textHandler = handler
 	return r
 }
 
@@ -160,4 +277,46 @@ func Put(path string, handler Handler) RouteInterface {
 // It is a shortcut method that combines setting the method to DELETE, path, and handler.
 func Delete(path string, handler Handler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodDelete).SetPath(path).SetHandler(handler)
+}
+
+// GetHTML creates a new GET route with the given path and HTML handler
+// It is a shortcut method that combines setting the method to GET, path, and HTML handler.
+func GetHTML(path string, handler HTMLHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetHTMLHandler(handler)
+}
+
+// PostHTML creates a new POST route with the given path and HTML handler
+// It is a shortcut method that combines setting the method to POST, path, and HTML handler.
+func PostHTML(path string, handler HTMLHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodPost).SetPath(path).SetHTMLHandler(handler)
+}
+
+// GetJSON creates a new GET route with the given path and JSON handler
+// It is a shortcut method that combines setting the method to GET, path, and JSON handler.
+func GetJSON(path string, handler JSONHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetJSONHandler(handler)
+}
+
+// PostJSON creates a new POST route with the given path and JSON handler
+// It is a shortcut method that combines setting the method to POST, path, and JSON handler.
+func PostJSON(path string, handler JSONHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodPost).SetPath(path).SetJSONHandler(handler)
+}
+
+// GetCSS creates a new GET route with the given path and CSS handler
+// It is a shortcut method that combines setting the method to GET, path, and CSS handler.
+func GetCSS(path string, handler CSSHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetCSSHandler(handler)
+}
+
+// GetXML creates a new GET route with the given path and XML handler
+// It is a shortcut method that combines setting the method to GET, path, and XML handler.
+func GetXML(path string, handler XMLHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetXMLHandler(handler)
+}
+
+// GetText creates a new GET route with the given path and text handler
+// It is a shortcut method that combines setting the method to GET, path, and text handler.
+func GetText(path string, handler TextHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetTextHandler(handler)
 }

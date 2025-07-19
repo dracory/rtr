@@ -336,3 +336,15 @@ func (r *testRoute) AddAfterMiddlewares(middleware []rtr.Middleware) rtr.RouteIn
 	return r
 }
 func (r *testRoute) GetAfterMiddlewares() []rtr.Middleware { return nil }
+
+// Implement new handler methods
+func (r *testRoute) GetHTMLHandler() rtr.HTMLHandler                           { return nil }
+func (r *testRoute) SetHTMLHandler(handler rtr.HTMLHandler) rtr.RouteInterface { return r }
+func (r *testRoute) GetJSONHandler() rtr.JSONHandler                           { return nil }
+func (r *testRoute) SetJSONHandler(handler rtr.JSONHandler) rtr.RouteInterface { return r }
+func (r *testRoute) GetCSSHandler() rtr.CSSHandler                             { return nil }
+func (r *testRoute) SetCSSHandler(handler rtr.CSSHandler) rtr.RouteInterface   { return r }
+func (r *testRoute) GetXMLHandler() rtr.XMLHandler                             { return nil }
+func (r *testRoute) SetXMLHandler(handler rtr.XMLHandler) rtr.RouteInterface   { return r }
+func (r *testRoute) GetTextHandler() rtr.TextHandler                           { return nil }
+func (r *testRoute) SetTextHandler(handler rtr.TextHandler) rtr.RouteInterface { return r }

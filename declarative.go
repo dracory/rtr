@@ -6,6 +6,11 @@ type RouteConfig struct {
 	Method           string                 `json:"method,omitempty"`
 	Path             string                 `json:"path"`
 	Handler          Handler                `json:"-"`
+	HTMLHandler      HTMLHandler            `json:"-"`
+	JSONHandler      JSONHandler            `json:"-"`
+	CSSHandler       CSSHandler             `json:"-"`
+	XMLHandler       XMLHandler             `json:"-"`
+	TextHandler      TextHandler            `json:"-"`
 	BeforeMiddleware []Middleware           `json:"-"`
 	AfterMiddleware  []Middleware           `json:"-"`
 	Metadata         map[string]interface{} `json:"metadata,omitempty"`
@@ -98,6 +103,21 @@ func buildRouteFromConfig(config RouteConfig) RouteInterface {
 	}
 	if config.Handler != nil {
 		route.SetHandler(config.Handler)
+	}
+	if config.HTMLHandler != nil {
+		route.SetHTMLHandler(config.HTMLHandler)
+	}
+	if config.JSONHandler != nil {
+		route.SetJSONHandler(config.JSONHandler)
+	}
+	if config.CSSHandler != nil {
+		route.SetCSSHandler(config.CSSHandler)
+	}
+	if config.XMLHandler != nil {
+		route.SetXMLHandler(config.XMLHandler)
+	}
+	if config.TextHandler != nil {
+		route.SetTextHandler(config.TextHandler)
 	}
 	if len(config.BeforeMiddleware) > 0 {
 		route.AddBeforeMiddlewares(config.BeforeMiddleware)

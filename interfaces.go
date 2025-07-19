@@ -5,6 +5,26 @@ import "net/http"
 // Handler defines the function signature for HTTP request handlers.
 type Handler func(http.ResponseWriter, *http.Request)
 
+// HTMLHandler defines the function signature for HTML response handlers.
+// It returns an HTML string that will be automatically wrapped with HTMLResponse.
+type HTMLHandler func(http.ResponseWriter, *http.Request) string
+
+// JSONHandler defines the function signature for JSON response handlers.
+// It returns a JSON string that will be automatically wrapped with JSONResponse.
+type JSONHandler func(http.ResponseWriter, *http.Request) string
+
+// CSSHandler defines the function signature for CSS response handlers.
+// It returns a CSS string that will be automatically wrapped with CSSResponse.
+type CSSHandler func(http.ResponseWriter, *http.Request) string
+
+// XMLHandler defines the function signature for XML response handlers.
+// It returns an XML string that will be automatically wrapped with XMLResponse.
+type XMLHandler func(http.ResponseWriter, *http.Request) string
+
+// TextHandler defines the function signature for text response handlers.
+// It returns a plain text string that will be automatically wrapped with TextResponse.
+type TextHandler func(http.ResponseWriter, *http.Request) string
+
 // Middleware represents a middleware function.
 // It is a function type that takes an http.Handler and returns an http.Handler.
 // Middleware functions can be used to process requests before or after they reach the main handler.
@@ -28,6 +48,31 @@ type RouteInterface interface {
 	GetHandler() Handler
 	// SetHandler sets the handler function for this route and returns the route for method chaining.
 	SetHandler(handler Handler) RouteInterface
+
+	// GetHTMLHandler returns the HTML handler function associated with this route.
+	GetHTMLHandler() HTMLHandler
+	// SetHTMLHandler sets the HTML handler function for this route and returns the route for method chaining.
+	SetHTMLHandler(handler HTMLHandler) RouteInterface
+
+	// GetJSONHandler returns the JSON handler function associated with this route.
+	GetJSONHandler() JSONHandler
+	// SetJSONHandler sets the JSON handler function for this route and returns the route for method chaining.
+	SetJSONHandler(handler JSONHandler) RouteInterface
+
+	// GetCSSHandler returns the CSS handler function associated with this route.
+	GetCSSHandler() CSSHandler
+	// SetCSSHandler sets the CSS handler function for this route and returns the route for method chaining.
+	SetCSSHandler(handler CSSHandler) RouteInterface
+
+	// GetXMLHandler returns the XML handler function associated with this route.
+	GetXMLHandler() XMLHandler
+	// SetXMLHandler sets the XML handler function for this route and returns the route for method chaining.
+	SetXMLHandler(handler XMLHandler) RouteInterface
+
+	// GetTextHandler returns the text handler function associated with this route.
+	GetTextHandler() TextHandler
+	// SetTextHandler sets the text handler function for this route and returns the route for method chaining.
+	SetTextHandler(handler TextHandler) RouteInterface
 
 	// GetName returns the name identifier associated with this route.
 	GetName() string
