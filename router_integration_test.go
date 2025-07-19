@@ -1,70 +1,35 @@
 package rtr_test
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/dracory/rtr"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
-// TestRouterWithDatabase tests the router with a real SQLite database connection
-func TestRouterWithDatabase(t *testing.T) {
-	// Set up in-memory SQLite database
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	// Create a test table
-	_, err = db.Exec(`CREATE TABLE users (
-		id INTEGER PRIMARY KEY,
-		name TEXT NOT NULL,
-		email TEXT NOT NULL
-	)`)
-	if err != nil {
-		t.Fatalf("Failed to create table: %v", err)
-	}
-
-	// Insert test data
-	_, err = db.Exec("INSERT INTO users (name, email) VALUES (?, ?)", "Test User", "test@example.com")
-	if err != nil {
-		t.Fatalf("Failed to insert data: %v", err)
+// TestRouterWithDataHandling tests the router with data handling scenarios
+func TestRouterWithDataHandling(t *testing.T) {
+	// Simulate some in-memory data
+	users := []map[string]interface{}{
+		{"id": 1, "name": "Test User", "email": "test@example.com"},
+		{"id": 2, "name": "Another User", "email": "another@example.com"},
 	}
 
 	// Create a router
 	r := rtr.NewRouter()
 
-	// Add a route that uses the database
+	// Add a route that returns user data
 	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			// Query the database
-			rows, err := db.Query("SELECT id, name, email FROM users")
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
-				return
-			}
-			defer rows.Close()
-
-			// Build a response
+			// Build a response from in-memory data
 			var response string
-			for rows.Next() {
-				var id int
-				var name, email string
-				if err := rows.Scan(&id, &name, &email); err != nil {
-					http.Error(w, fmt.Sprintf("Row scan error: %v", err), http.StatusInternalServerError)
-					return
-				}
-				response += fmt.Sprintf("User %d: %s (%s)\n", id, name, email)
+			for _, user := range users {
+				response += fmt.Sprintf("User %v: %v (%v)\n", user["id"], user["name"], user["email"])
 			}
-
 			fmt.Fprint(w, response)
 		})
 	r.AddRoute(route)
@@ -87,76 +52,45 @@ func TestRouterWithDatabase(t *testing.T) {
 	}
 
 	// Check the response contains the expected data
-	expected := "User 1: Test User (test@example.com)\n"
+	expected := "User 1: Test User (test@example.com)\nUser 2: Another User (another@example.com)\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}
 }
 
-// TestRouterWithDatabaseMiddleware tests middleware that injects a database connection
-func TestRouterWithDatabaseMiddleware(t *testing.T) {
-	// Set up in-memory SQLite database
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	// Create a test table
-	_, err = db.Exec(`CREATE TABLE items (
-		id INTEGER PRIMARY KEY,
-		name TEXT NOT NULL
-	)`)
-	if err != nil {
-		t.Fatalf("Failed to create table: %v", err)
-	}
-
-	// Insert test data
-	_, err = db.Exec("INSERT INTO items (name) VALUES (?)", "Test Item")
-	if err != nil {
-		t.Fatalf("Failed to insert data: %v", err)
+// TestRouterWithDataMiddleware tests middleware that injects data handling
+func TestRouterWithDataMiddleware(t *testing.T) {
+	// Simulate some in-memory data
+	items := []map[string]interface{}{
+		{"id": 1, "name": "Test Item"},
+		{"id": 2, "name": "Another Item"},
 	}
 
 	// Create a router
 	r := rtr.NewRouter()
 
-	// Create a middleware that adds the database connection to the request context
-	dbMiddleware := func(next http.Handler) http.Handler {
+	// Create a middleware that adds logging or data validation
+	dataMiddleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// In a real application, you would use context to pass the db
-			// For this test, we're using a closure to access the db variable
+			// Add some middleware logic (e.g., logging, validation)
+			w.Header().Set("X-Middleware", "data-middleware")
 			next.ServeHTTP(w, r)
 		})
 	}
 
 	// Add the middleware to the router
-	r.AddBeforeMiddlewares([]rtr.Middleware{dbMiddleware})
+	r.AddBeforeMiddlewares([]rtr.Middleware{dataMiddleware})
 
-	// Add a route that uses the database from the middleware
+	// Add a route that uses the in-memory data
 	route := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/items").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			// Query the database (accessing it from the closure)
-			rows, err := db.Query("SELECT id, name FROM items")
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
-				return
-			}
-			defer rows.Close()
-
-			// Build a response
+			// Build a response from in-memory data
 			var response string
-			for rows.Next() {
-				var id int
-				var name string
-				if err := rows.Scan(&id, &name); err != nil {
-					http.Error(w, fmt.Sprintf("Row scan error: %v", err), http.StatusInternalServerError)
-					return
-				}
-				response += fmt.Sprintf("Item %d: %s\n", id, name)
+			for _, item := range items {
+				response += fmt.Sprintf("Item %v: %v\n", item["id"], item["name"])
 			}
-
 			fmt.Fprint(w, response)
 		})
 	r.AddRoute(route)
@@ -179,39 +113,23 @@ func TestRouterWithDatabaseMiddleware(t *testing.T) {
 	}
 
 	// Check the response contains the expected data
-	expected := "Item 1: Test Item\n"
+	expected := "Item 1: Test Item\nItem 2: Another Item\n"
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}
+
+	// Check that middleware header was set
+	if middleware := rr.Header().Get("X-Middleware"); middleware != "data-middleware" {
+		t.Errorf("middleware header not set correctly: got %v want %v", middleware, "data-middleware")
+	}
 }
 
-// TestRouterWithMultipleDatabaseOperations tests a more complex scenario with multiple database operations
-func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
-	// Set up in-memory SQLite database
-	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	// Create a test table
-	_, err = db.Exec(`CREATE TABLE products (
-		id INTEGER PRIMARY KEY,
-		name TEXT NOT NULL,
-		price REAL NOT NULL
-	)`)
-	if err != nil {
-		t.Fatalf("Failed to create table: %v", err)
-	}
-
-	// Insert test data
-	_, err = db.Exec("INSERT INTO products (name, price) VALUES (?, ?)", "Product 1", 10.99)
-	if err != nil {
-		t.Fatalf("Failed to insert data: %v", err)
-	}
-	_, err = db.Exec("INSERT INTO products (name, price) VALUES (?, ?)", "Product 2", 20.49)
-	if err != nil {
-		t.Fatalf("Failed to insert data: %v", err)
+// TestRouterWithMultipleRouteOperations tests a more complex scenario with multiple route operations
+func TestRouterWithMultipleRouteOperations(t *testing.T) {
+	// Simulate some in-memory data
+	products := []map[string]interface{}{
+		{"id": 1, "name": "Product 1", "price": 10.99},
+		{"id": 2, "name": "Product 2", "price": 20.49},
 	}
 
 	// Create a router
@@ -223,37 +141,21 @@ func TestRouterWithMultipleDatabaseOperations(t *testing.T) {
 	// Add routes to the group
 	productGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("").SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		// List all products
-		rows, err := db.Query("SELECT id, name, price FROM products")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
 		var response string
-		for rows.Next() {
-			var id int
-			var name string
-			var price float64
-			if err := rows.Scan(&id, &name, &price); err != nil {
-				http.Error(w, fmt.Sprintf("Row scan error: %v", err), http.StatusInternalServerError)
-				return
-			}
-			response += fmt.Sprintf("Product %d: %s ($%.2f)\n", id, name, price)
+		for _, product := range products {
+			response += fmt.Sprintf("Product %v: %v ($%.2f)\n", product["id"], product["name"], product["price"])
 		}
-
 		fmt.Fprint(w, response)
 	}))
 
 	productGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/total").SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		// Calculate total price of all products
 		var total float64
-		err := db.QueryRow("SELECT SUM(price) FROM products").Scan(&total)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Database error: %v", err), http.StatusInternalServerError)
-			return
+		for _, product := range products {
+			if price, ok := product["price"].(float64); ok {
+				total += price
+			}
 		}
-
 		fmt.Fprintf(w, "Total price: $%.2f", total)
 	}))
 
