@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
+
+	"github.com/dracory/rtr/middlewares"
 )
 
 // NewRouter creates and returns a new RouterInterface implementation.
@@ -18,7 +20,13 @@ func NewRouter() RouterInterface {
 	}
 
 	// Add recovery middleware by default
-	r.AddBeforeMiddlewares(MiddlewaresToInterfaces(DefaultMiddlewares()))
+	defaultMiddlewares := middlewares.DefaultMiddlewares()
+	// Convert middlewares.Middleware to rtr.Middleware
+	rtrMiddlewares := make([]StdMiddleware, len(defaultMiddlewares))
+	for i, mw := range defaultMiddlewares {
+		rtrMiddlewares[i] = StdMiddleware(mw)
+	}
+	r.AddBeforeMiddlewares(MiddlewaresToInterfaces(rtrMiddlewares))
 	return r
 }
 
@@ -285,8 +293,8 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 	for _, subgroup := range group.GetGroups() {
 		// Create a new group that includes the current group's middlewares
 		nestedGroup := &groupImpl{
-			prefix:                 subgroup.GetPrefix(),
-			routes:                 subgroup.GetRoutes(),
+			prefix:            subgroup.GetPrefix(),
+			routes:            subgroup.GetRoutes(),
 			groups:            subgroup.GetGroups(),
 			beforeMiddlewares: append(group.GetBeforeMiddlewares(), subgroup.GetBeforeMiddlewares()...),
 			afterMiddlewares:  append(group.GetAfterMiddlewares(), subgroup.GetAfterMiddlewares()...),

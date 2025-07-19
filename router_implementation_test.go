@@ -264,7 +264,7 @@ func TestRouterWithBeforeMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{headerMiddleware}))
+	r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{headerMiddleware}))
 
 	// Add a route
 	route := rtr.NewRoute().
@@ -321,7 +321,7 @@ func TestRouterWithAfterMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{responseMiddleware}))
+	r.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{responseMiddleware}))
 
 	// Add a route
 	route := rtr.NewRoute().
@@ -376,13 +376,13 @@ func TestRouterWithRouteMiddleware(t *testing.T) {
 		})
 
 	// Add middleware to the route
-	routeMiddleware := rtr.Middleware(func(next http.Handler) http.Handler {
+	routeMiddleware := rtr.StdMiddleware(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("X-Route", "route-value")
 			next.ServeHTTP(w, r)
 		})
 	})
-	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{routeMiddleware}))
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{routeMiddleware}))
 
 	// Add the route to the router
 	r.AddRoute(route)
@@ -432,7 +432,7 @@ func TestRouterWithGroupMiddleware(t *testing.T) {
 			next.ServeHTTP(w, r)
 		})
 	}
-	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{groupMiddleware}))
+	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{groupMiddleware}))
 
 	// Add a route to the group
 	route := rtr.NewRoute().

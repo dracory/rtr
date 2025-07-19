@@ -35,7 +35,7 @@ func TestDeclarativeAPI(t *testing.T) {
 	config := rtr.RouterConfig{
 		Name:             "Test Router",
 		Prefix:           "",
-		BeforeMiddleware: []rtr.Middleware{testMiddleware},
+		BeforeMiddleware: []rtr.StdMiddleware{testMiddleware},
 		Routes: []rtr.RouteConfig{
 			rtr.GET("/", homeHandler).WithName("Home"),
 		},

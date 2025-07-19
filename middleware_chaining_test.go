@@ -12,17 +12,17 @@ func TestMiddlewareChaining(t *testing.T) {
 	tests := []struct {
 		name            string
 		middlewareOrder []string
-		expectedHeaders  map[string]string
+		expectedHeaders map[string]string
 	}{
 		{
-			name: "single middleware",
+			name:            "single middleware",
 			middlewareOrder: []string{"first"},
 			expectedHeaders: map[string]string{
 				"X-First": "true",
 			},
 		},
 		{
-			name: "multiple middlewares in order",
+			name:            "multiple middlewares in order",
 			middlewareOrder: []string{"first", "second", "third"},
 			expectedHeaders: map[string]string{
 				"X-First":  "true",
@@ -31,7 +31,7 @@ func TestMiddlewareChaining(t *testing.T) {
 			},
 		},
 		{
-			name: "reverse order middlewares",
+			name:            "reverse order middlewares",
 			middlewareOrder: []string{"third", "second", "first"},
 			expectedHeaders: map[string]string{
 				"X-First":  "true",
@@ -42,7 +42,7 @@ func TestMiddlewareChaining(t *testing.T) {
 	}
 
 	// Define test middlewares
-	middlewares := map[string]rtr.Middleware{
+	middlewares := map[string]rtr.StdMiddleware{
 		"first": func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-First", "true")
@@ -81,7 +81,7 @@ func TestMiddlewareChaining(t *testing.T) {
 			// Add middlewares in the specified order
 			for _, mwName := range tc.middlewareOrder {
 				mw := middlewares[mwName]
-				route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{mw}))
+				route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{mw}))
 			}
 
 			r.AddRoute(route)
@@ -114,7 +114,7 @@ func TestMiddlewareAbort(t *testing.T) {
 	var middlewareCalls []string
 
 	// Middleware that aborts the request chain
-	abortMiddleware := func(name string) rtr.Middleware {
+	abortMiddleware := func(name string) rtr.StdMiddleware {
 		return func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				middlewareCalls = append(middlewareCalls, name)
@@ -132,7 +132,7 @@ func TestMiddlewareAbort(t *testing.T) {
 	r.AddRoute(rtr.NewRoute().
 		SetMethod(http.MethodGet).
 		SetPath("/secure").
-		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
+		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{
 			abortMiddleware("abort"),
 		})).
 		SetHandler(handler))
@@ -188,8 +188,8 @@ func TestAfterMiddleware(t *testing.T) {
 	r.AddRoute(rtr.NewRoute().
 		SetMethod(http.MethodGet).
 		SetPath("/test").
-		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{beforeMW})).
-		AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{afterMW})).
+		AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{beforeMW})).
+		AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{afterMW})).
 		SetHandler(handler))
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)

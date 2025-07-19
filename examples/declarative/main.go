@@ -174,7 +174,7 @@ func CreateDeclarativeRouter() rtr.RouterInterface {
 	// Declarative router configuration
 	config := rtr.RouterConfig{
 		Name: "Comprehensive Declarative API Router",
-		BeforeMiddleware: []rtr.Middleware{
+		BeforeMiddleware: []rtr.StdMiddleware{
 			loggingMiddleware,
 		},
 		Routes: []rtr.RouteConfig{

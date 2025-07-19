@@ -12,7 +12,7 @@ import (
 // MiddlewareInfo represents middleware information for display purposes
 type MiddlewareInfo struct {
 	Name string
-	Func Middleware
+	Func StdMiddleware
 }
 
 // List displays the router's routes, groups, domains, and middleware in a formatted table
@@ -201,7 +201,7 @@ func (r *routerImpl) addGroupRoutesToTable(t table.Writer, group GroupInterface,
 }
 
 // GetMiddlewareName attempts to get a readable name for a middleware function
-func GetMiddlewareName(middleware Middleware) string {
+func GetMiddlewareName(middleware StdMiddleware) string {
 	if middleware == nil {
 		return "nil"
 	}

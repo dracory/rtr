@@ -79,7 +79,7 @@ func TestRouterWithDataMiddleware(t *testing.T) {
 	}
 
 	// Add the middleware to the router
-	r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{dataMiddleware}))
+	r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{dataMiddleware}))
 
 	// Add a route that uses the in-memory data
 	route := rtr.NewRoute().

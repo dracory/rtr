@@ -1,4 +1,4 @@
-package rtr
+package middlewares
 
 import (
 	"log"
@@ -22,12 +22,4 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// DefaultMiddlewares returns a slice of default middlewares that should be used with the router.
-// Currently, it only includes the RecoveryMiddleware.
-func DefaultMiddlewares() []Middleware {
-	return []Middleware{
-		RecoveryMiddleware,
-	}
 }

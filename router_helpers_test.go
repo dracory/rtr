@@ -95,8 +95,8 @@ func TestRouterGettersAndSetters(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { next.ServeHTTP(w, r) })
 		}
 		
-		r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{beforeMW}))
-		r.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{afterMW}))
+		r.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{beforeMW}))
+		r.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{afterMW}))
 		
 		// Test GetBeforeMiddlewares - should include both default and our test middleware
 		beforeMWs := r.GetBeforeMiddlewares()

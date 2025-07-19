@@ -27,8 +27,8 @@ type GroupConfig struct {
 	Prefix                string                 `json:"prefix"`
 	Routes                []RouteConfig          `json:"routes,omitempty"`
 	Groups                []GroupConfig          `json:"groups,omitempty"`
-	BeforeMiddleware      []Middleware           `json:"-"`
-	AfterMiddleware       []Middleware           `json:"-"`
+	BeforeMiddleware      []StdMiddleware        `json:"-"`
+	AfterMiddleware       []StdMiddleware        `json:"-"`
 	NamedBeforeMiddleware []MiddlewareInterface  `json:"-"`
 	NamedAfterMiddleware  []MiddlewareInterface  `json:"-"`
 	Metadata              map[string]interface{} `json:"metadata,omitempty"`
@@ -54,8 +54,8 @@ type RouterConfig struct {
 	Routes           []RouteConfig          `json:"routes,omitempty"`
 	Groups           []GroupConfig          `json:"groups,omitempty"`
 	Domains          []DomainConfig         `json:"domains,omitempty"`
-	BeforeMiddleware []Middleware           `json:"-"`
-	AfterMiddleware  []Middleware           `json:"-"`
+	BeforeMiddleware []StdMiddleware        `json:"-"`
+	AfterMiddleware  []StdMiddleware        `json:"-"`
 	Metadata         map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -256,13 +256,13 @@ func (r RouteConfig) WithName(name string) RouteConfig {
 }
 
 // WithBeforeMiddleware adds before middleware to a route configuration
-func (r RouteConfig) WithBeforeMiddleware(middleware ...Middleware) RouteConfig {
+func (r RouteConfig) WithBeforeMiddleware(middleware ...StdMiddleware) RouteConfig {
 	r.BeforeMiddleware = append(r.BeforeMiddleware, MiddlewaresToInterfaces(middleware)...)
 	return r
 }
 
 // WithAfterMiddleware adds after middleware to a route configuration
-func (r RouteConfig) WithAfterMiddleware(middleware ...Middleware) RouteConfig {
+func (r RouteConfig) WithAfterMiddleware(middleware ...StdMiddleware) RouteConfig {
 	r.AfterMiddleware = append(r.AfterMiddleware, MiddlewaresToInterfaces(middleware)...)
 	return r
 }
@@ -307,13 +307,13 @@ func (g GroupConfig) WithName(name string) GroupConfig {
 }
 
 // WithBeforeMiddleware adds before middleware to a group configuration
-func (g GroupConfig) WithBeforeMiddleware(middleware ...Middleware) GroupConfig {
+func (g GroupConfig) WithBeforeMiddleware(middleware ...StdMiddleware) GroupConfig {
 	g.BeforeMiddleware = append(g.BeforeMiddleware, middleware...)
 	return g
 }
 
 // WithAfterMiddleware adds after middleware to a group configuration
-func (g GroupConfig) WithAfterMiddleware(middleware ...Middleware) GroupConfig {
+func (g GroupConfig) WithAfterMiddleware(middleware ...StdMiddleware) GroupConfig {
 	g.AfterMiddleware = append(g.AfterMiddleware, middleware...)
 	return g
 }

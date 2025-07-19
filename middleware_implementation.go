@@ -10,7 +10,7 @@ type middlewareImpl struct {
 	name string
 
 	// handler is the middleware function that will be executed
-	handler Middleware
+	handler StdMiddleware
 }
 
 var _ MiddlewareInterface = (*middlewareImpl)(nil)
@@ -29,14 +29,14 @@ func (m *middlewareImpl) SetName(name string) MiddlewareInterface {
 }
 
 // GetHandler returns the underlying middleware function.
-// Returns the Middleware function that will be executed.
-func (m *middlewareImpl) GetHandler() Middleware {
+// Returns the StdMiddleware function that will be executed.
+func (m *middlewareImpl) GetHandler() StdMiddleware {
 	return m.handler
 }
 
 // SetHandler sets the middleware function and returns the middleware for method chaining.
-// The handler parameter should be a valid Middleware function.
-func (m *middlewareImpl) SetHandler(handler Middleware) MiddlewareInterface {
+// The handler parameter should be a valid StdMiddleware function.
+func (m *middlewareImpl) SetHandler(handler StdMiddleware) MiddlewareInterface {
 	m.handler = handler
 	return m
 }
@@ -52,7 +52,7 @@ func (m *middlewareImpl) Execute(next http.Handler) http.Handler {
 
 // NewMiddleware creates a new named middleware with the given name and handler.
 // This is the main factory function for creating named middleware.
-func NewMiddleware(name string, handler Middleware) MiddlewareInterface {
+func NewMiddleware(name string, handler StdMiddleware) MiddlewareInterface {
 	return &middlewareImpl{
 		name:    name,
 		handler: handler,
@@ -61,22 +61,22 @@ func NewMiddleware(name string, handler Middleware) MiddlewareInterface {
 
 // NewAnonymousMiddleware creates a new middleware without a name.
 // This is useful for backward compatibility with existing code that uses anonymous middleware.
-func NewAnonymousMiddleware(handler Middleware) MiddlewareInterface {
+func NewAnonymousMiddleware(handler StdMiddleware) MiddlewareInterface {
 	return &middlewareImpl{
 		name:    "",
 		handler: handler,
 	}
 }
 
-// MiddlewareFromFunction converts a Middleware function to a MiddlewareInterface.
+// MiddlewareFromFunction converts a StdMiddleware function to a MiddlewareInterface.
 // This is a convenience function for backward compatibility.
-func MiddlewareFromFunction(handler Middleware) MiddlewareInterface {
+func MiddlewareFromFunction(handler StdMiddleware) MiddlewareInterface {
 	return NewAnonymousMiddleware(handler)
 }
 
-// MiddlewaresToInterfaces converts a slice of Middleware functions to MiddlewareInterface slice.
-// This is useful for migrating existing code that uses []Middleware to []MiddlewareInterface.
-func MiddlewaresToInterfaces(middlewares []Middleware) []MiddlewareInterface {
+// MiddlewaresToInterfaces converts a slice of StdMiddleware functions to MiddlewareInterface slice.
+// This is useful for migrating existing code that uses []StdMiddleware to []MiddlewareInterface.
+func MiddlewaresToInterfaces(middlewares []StdMiddleware) []MiddlewareInterface {
 	var interfaces []MiddlewareInterface
 	for _, mw := range middlewares {
 		interfaces = append(interfaces, NewAnonymousMiddleware(mw))
@@ -84,18 +84,18 @@ func MiddlewaresToInterfaces(middlewares []Middleware) []MiddlewareInterface {
 	return interfaces
 }
 
-// InterfacesToMiddlewares converts a slice of MiddlewareInterface to Middleware functions.
+// InterfacesToMiddlewares converts a slice of MiddlewareInterface to StdMiddleware functions.
 // This is useful for backward compatibility when you need to work with the underlying functions.
-func InterfacesToMiddlewares(interfaces []MiddlewareInterface) []Middleware {
-	var middlewares []Middleware
+func InterfacesToMiddlewares(interfaces []MiddlewareInterface) []StdMiddleware {
+	var middlewares []StdMiddleware
 	for _, mw := range interfaces {
 		middlewares = append(middlewares, mw.GetHandler())
 	}
 	return middlewares
 }
 
-// AddMiddlewaresToInterfaces converts and adds Middleware functions to a MiddlewareInterface slice
-func AddMiddlewaresToInterfaces(interfaces []MiddlewareInterface, middlewares []Middleware) []MiddlewareInterface {
+// AddMiddlewaresToInterfaces converts and adds StdMiddleware functions to a MiddlewareInterface slice
+func AddMiddlewaresToInterfaces(interfaces []MiddlewareInterface, middlewares []StdMiddleware) []MiddlewareInterface {
 	return append(interfaces, MiddlewaresToInterfaces(middlewares)...)
 }
 

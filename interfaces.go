@@ -46,10 +46,11 @@ type TextHandler StringHandler
 // Returns a JavaScript string that will be wrapped with JSResponse().
 type JSHandler StringHandler
 
-// Middleware represents a middleware function.
+// StdMiddleware represents a standard middleware function.
 // It is a function type that takes an http.Handler and returns an http.Handler.
-// Middleware functions can be used to process requests before or after they reach the main handler.
-type Middleware func(http.Handler) http.Handler
+// StdMiddleware functions can be used to process requests before or after they reach the main handler.
+// This is the standard Go HTTP middleware pattern, distinct from MiddlewareInterface which provides named middleware.
+type StdMiddleware func(http.Handler) http.Handler
 
 // MiddlewareInterface defines the interface for named middleware.
 // It provides a way to associate a name with middleware for better debugging and documentation.
@@ -62,11 +63,11 @@ type MiddlewareInterface interface {
 	SetName(name string) MiddlewareInterface
 
 	// GetHandler returns the underlying middleware function.
-	// Returns the Middleware function that will be executed.
-	GetHandler() Middleware
+	// Returns the StdMiddleware function that will be executed.
+	GetHandler() StdMiddleware
 	// SetHandler sets the middleware function and returns the middleware for method chaining.
-	// The handler parameter should be a valid Middleware function.
-	SetHandler(handler Middleware) MiddlewareInterface
+	// The handler parameter should be a valid StdMiddleware function.
+	SetHandler(handler StdMiddleware) MiddlewareInterface
 
 	// Execute applies the middleware to the given handler.
 	// This is equivalent to calling GetHandler()(next).

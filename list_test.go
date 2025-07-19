@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	rtr "github.com/dracory/rtr"
+	"github.com/dracory/rtr/middlewares"
 )
 
 // TestList verifies that the List method works without panicking
@@ -14,7 +15,7 @@ func TestList(t *testing.T) {
 	router := rtr.NewRouter()
 
 	// Add some middleware
-	router.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
+	router.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{
 		func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				next.ServeHTTP(w, r)
@@ -50,7 +51,7 @@ func TestList(t *testing.T) {
 		}))
 
 	// Add middleware to the group
-	apiGroup.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
+	apiGroup.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{
 		func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				next.ServeHTTP(w, r)
@@ -89,7 +90,7 @@ func TestList(t *testing.T) {
 // TestGetMiddlewareName tests the middleware name extraction
 func TestGetMiddlewareName(t *testing.T) {
 	// Test with RecoveryMiddleware
-	name := rtr.GetMiddlewareName(rtr.RecoveryMiddleware)
+	name := rtr.GetMiddlewareName(middlewares.RecoveryMiddleware)
 	if name == "" {
 		t.Error("Expected non-empty middleware name")
 	}
@@ -123,10 +124,10 @@ func TestRouteMiddlewareNames(t *testing.T) {
 	}
 
 	// Add some middleware
-	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
+	route.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{
 		func(next http.Handler) http.Handler { return next },
 	}))
-	route.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{
+	route.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{
 		func(next http.Handler) http.Handler { return next },
 	}))
 

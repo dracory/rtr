@@ -47,23 +47,23 @@ func TestGroupInterface(t *testing.T) {
 	middleware2 := func(next http.Handler) http.Handler { return next }
 
 	// Test before middlewares
-	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware1}))
+	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware1}))
 	if len(group.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(group.GetBeforeMiddlewares()))
 	}
 
-	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware2}))
+	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware2}))
 	if len(group.GetBeforeMiddlewares()) != 2 {
 		t.Errorf("Expected 2 before middlewares, got %d", len(group.GetBeforeMiddlewares()))
 	}
 
 	// Test after middlewares
-	group.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware1}))
+	group.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware1}))
 	if len(group.GetAfterMiddlewares()) != 1 {
 		t.Errorf("Expected 1 after middleware, got %d", len(group.GetAfterMiddlewares()))
 	}
 
-	group.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware2}))
+	group.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware2}))
 	if len(group.GetAfterMiddlewares()) != 2 {
 		t.Errorf("Expected 2 after middlewares, got %d", len(group.GetAfterMiddlewares()))
 	}
@@ -91,8 +91,8 @@ func TestGroupChaining(t *testing.T) {
 	// Test middleware chaining
 	middleware := func(next http.Handler) http.Handler { return next }
 
-	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware})).
-		AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware}))
+	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware})).
+		AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware}))
 
 	if len(group.GetBeforeMiddlewares()) != 1 {
 		t.Errorf("Expected 1 before middleware, got %d", len(group.GetBeforeMiddlewares()))
@@ -182,8 +182,8 @@ func TestGroupWithMiddlewares(t *testing.T) {
 	}
 
 	// Add middlewares to the group
-	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware1, middleware2}))
-	group.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.Middleware{middleware3}))
+	group.AddBeforeMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware1, middleware2}))
+	group.AddAfterMiddlewares(rtr.MiddlewaresToInterfaces([]rtr.StdMiddleware{middleware3}))
 
 	// Check middleware counts
 	if len(group.GetBeforeMiddlewares()) != 2 {

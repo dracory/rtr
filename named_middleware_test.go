@@ -80,7 +80,7 @@ func TestMiddlewareConversion(t *testing.T) {
 	}
 
 	// Convert to MiddlewareInterface slice
-	middlewares := []Middleware{middleware1, middleware2}
+	middlewares := []StdMiddleware{middleware1, middleware2}
 	interfaceMiddlewares := MiddlewaresToInterfaces(middlewares)
 
 	if len(interfaceMiddlewares) != 2 {

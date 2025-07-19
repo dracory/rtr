@@ -1,11 +1,11 @@
-package rtr_test
+package middlewares_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dracory/rtr"
+	"github.com/dracory/rtr/middlewares"
 )
 
 func TestRecoveryMiddleware(t *testing.T) {
@@ -24,7 +24,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Wrap the panic handler with our recovery middleware
-	handler := rtr.RecoveryMiddleware(panicHandler)
+	handler := middlewares.RecoveryMiddleware(panicHandler)
 
 	// Call ServeHTTP which should recover from the panic
 	handler.ServeHTTP(rr, req)
@@ -44,10 +44,10 @@ func TestRecoveryMiddleware(t *testing.T) {
 }
 
 func TestDefaultMiddlewares(t *testing.T) {
-	middlewares := rtr.DefaultMiddlewares()
+	middlewareList := middlewares.DefaultMiddlewares()
 
 	// Check that we have exactly one middleware (the recovery middleware)
-	if len(middlewares) != 1 {
-		t.Errorf("expected 1 default middleware, got %d", len(middlewares))
+	if len(middlewareList) != 1 {
+		t.Errorf("expected 1 default middleware, got %d", len(middlewareList))
 	}
 }
