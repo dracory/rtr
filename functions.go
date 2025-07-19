@@ -11,7 +11,7 @@ import "net/http"
 //
 // Returns:
 //   - A standard Handler function that writes the returned string to the response.
-func ToHandler(handler StringHandler) Handler {
+func ToHandler(handler StringHandler) StdHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(handler(w, r)))
 	}
@@ -26,7 +26,7 @@ func ToHandler(handler StringHandler) Handler {
 //
 // Returns:
 //   - A standard Handler function that writes the error message to the response if an error is returned.
-func ErrorHandlerToHandler(handler ErrorHandler) Handler {
+func ErrorHandlerToHandler(handler ErrorHandler) StdHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := handler(w, r)
 		if err != nil {

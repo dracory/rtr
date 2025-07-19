@@ -2,15 +2,15 @@ package rtr
 
 // RouteConfig represents a declarative route configuration
 type RouteConfig struct {
-	Name             string                 `json:"name,omitempty"`
-	Method           string                 `json:"method,omitempty"`
-	Path             string                 `json:"path"`
-	Handler          Handler                `json:"-"`
-	ErrorHandler     ErrorHandler           `json:"-"`
-	HTMLHandler      HTMLHandler            `json:"-"`
-	JSONHandler      JSONHandler            `json:"-"`
-	CSSHandler       CSSHandler             `json:"-"`
-	XMLHandler       XMLHandler             `json:"-"`
+	Name                  string                 `json:"name,omitempty"`
+	Method                string                 `json:"method,omitempty"`
+	Path                  string                 `json:"path"`
+	Handler               StdHandler             `json:"-"`
+	ErrorHandler          ErrorHandler           `json:"-"`
+	HTMLHandler           HTMLHandler            `json:"-"`
+	JSONHandler           JSONHandler            `json:"-"`
+	CSSHandler            CSSHandler             `json:"-"`
+	XMLHandler            XMLHandler             `json:"-"`
 	TextHandler           TextHandler            `json:"-"`
 	BeforeMiddleware      []MiddlewareInterface  `json:"-"`
 	AfterMiddleware       []MiddlewareInterface  `json:"-"`
@@ -196,7 +196,7 @@ func buildDomainFromConfig(config DomainConfig) DomainInterface {
 // Convenience functions for common route types
 
 // GET creates a GET route configuration
-func GET(path string, handler Handler) RouteConfig {
+func GET(path string, handler StdHandler) RouteConfig {
 	return RouteConfig{
 		Method:  "GET",
 		Path:    path,
@@ -205,7 +205,7 @@ func GET(path string, handler Handler) RouteConfig {
 }
 
 // POST creates a POST route configuration
-func POST(path string, handler Handler) RouteConfig {
+func POST(path string, handler StdHandler) RouteConfig {
 	return RouteConfig{
 		Method:  "POST",
 		Path:    path,
@@ -214,7 +214,7 @@ func POST(path string, handler Handler) RouteConfig {
 }
 
 // PUT creates a PUT route configuration
-func PUT(path string, handler Handler) RouteConfig {
+func PUT(path string, handler StdHandler) RouteConfig {
 	return RouteConfig{
 		Method:  "PUT",
 		Path:    path,
@@ -223,7 +223,7 @@ func PUT(path string, handler Handler) RouteConfig {
 }
 
 // DELETE creates a DELETE route configuration
-func DELETE(path string, handler Handler) RouteConfig {
+func DELETE(path string, handler StdHandler) RouteConfig {
 	return RouteConfig{
 		Method:  "DELETE",
 		Path:    path,
@@ -232,7 +232,7 @@ func DELETE(path string, handler Handler) RouteConfig {
 }
 
 // PATCH creates a PATCH route configuration
-func PATCH(path string, handler Handler) RouteConfig {
+func PATCH(path string, handler StdHandler) RouteConfig {
 	return RouteConfig{
 		Method:  "PATCH",
 		Path:    path,
@@ -241,7 +241,7 @@ func PATCH(path string, handler Handler) RouteConfig {
 }
 
 // OPTIONS creates an OPTIONS route configuration
-func OPTIONS(path string, handler Handler) RouteConfig {
+func OPTIONS(path string, handler StdHandler) RouteConfig {
 	return RouteConfig{
 		Method:  "OPTIONS",
 		Path:    path,
@@ -369,12 +369,12 @@ func (r *RouteConfig) SetPath(path string) RouteInterface {
 }
 
 // GetHandler returns the handler function associated with this route.
-func (r *RouteConfig) GetHandler() Handler {
+func (r *RouteConfig) GetHandler() StdHandler {
 	return r.Handler
 }
 
 // SetHandler sets the handler function for this route and returns the route for method chaining.
-func (r *RouteConfig) SetHandler(handler Handler) RouteInterface {
+func (r *RouteConfig) SetHandler(handler StdHandler) RouteInterface {
 	r.Handler = handler
 	return r
 }
@@ -772,7 +772,3 @@ func (d *DomainConfig) Match(host string) bool {
 	}
 	return false
 }
-
-
-
-

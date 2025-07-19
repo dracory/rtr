@@ -10,38 +10,38 @@ import (
 func TestRouteHelpers(t *testing.T) {
 	tests := []struct {
 		name     string
-		fn       func(string, rtr.Handler) rtr.RouteInterface
+		fn       func(string, rtr.StdHandler) rtr.RouteInterface
 		method   string
-		handler  rtr.Handler
+		handler  rtr.StdHandler
 		path     string
 		hasError bool
 	}{
 		{
-			name:   "GET helper",
-			fn:     rtr.Get,
-			method: http.MethodGet,
-			path:   "/test",
+			name:    "GET helper",
+			fn:      rtr.Get,
+			method:  http.MethodGet,
+			path:    "/test",
 			handler: func(w http.ResponseWriter, r *http.Request) {},
 		},
 		{
-			name:   "POST helper",
-			fn:     rtr.Post,
-			method: http.MethodPost,
-			path:   "/test",
+			name:    "POST helper",
+			fn:      rtr.Post,
+			method:  http.MethodPost,
+			path:    "/test",
 			handler: func(w http.ResponseWriter, r *http.Request) {},
 		},
 		{
-			name:   "PUT helper",
-			fn:     rtr.Put,
-			method: http.MethodPut,
-			path:   "/test",
+			name:    "PUT helper",
+			fn:      rtr.Put,
+			method:  http.MethodPut,
+			path:    "/test",
 			handler: func(w http.ResponseWriter, r *http.Request) {},
 		},
 		{
-			name:   "DELETE helper",
-			fn:     rtr.Delete,
-			method: http.MethodDelete,
-			path:   "/test",
+			name:    "DELETE helper",
+			fn:      rtr.Delete,
+			method:  http.MethodDelete,
+			path:    "/test",
 			handler: func(w http.ResponseWriter, r *http.Request) {},
 		},
 		// These cases don't panic, they just create routes with empty paths or nil handlers

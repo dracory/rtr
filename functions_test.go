@@ -194,7 +194,7 @@ func TestToHandlerReturnType(t *testing.T) {
 	handler := rtr.ToHandler(stringHandler)
 
 	// Verify it implements the Handler interface
-	var _ rtr.Handler = handler
+	var _ rtr.StdHandler = handler
 
 	// Verify it's actually a function with the right signature
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -344,7 +344,7 @@ func TestErrorHandlerToHandlerReturnType(t *testing.T) {
 	handler := rtr.ErrorHandlerToHandler(errorHandler)
 
 	// Verify it implements the Handler interface
-	var _ rtr.Handler = handler
+	var _ rtr.StdHandler = handler
 
 	// Verify it's actually a function with the right signature
 	req := httptest.NewRequest("GET", "/test", nil)

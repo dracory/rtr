@@ -23,7 +23,7 @@ type routeImpl struct {
 	hasOptionalParams bool
 
 	// handler is the function that will be called when this route is matched
-	handler Handler
+	handler StdHandler
 
 	// stringHandler is the simple string handler function that returns a string without setting headers
 	stringHandler StringHandler
@@ -109,7 +109,7 @@ func (r *routeImpl) SetPath(path string) RouteInterface {
 // GetHandler returns the handler function associated with this route.
 // Returns the Handler function that will be called when this route is matched.
 // Implements handler prioritization: Handler > StringHandler > HTMLHandler > JSONHandler > CSSHandler > XMLHandler > TextHandler > ErrorHandler
-func (r *routeImpl) GetHandler() Handler {
+func (r *routeImpl) GetHandler() StdHandler {
 	// Priority 1: Direct Handler
 	if r.handler != nil {
 		return r.handler
@@ -180,7 +180,7 @@ func (r *routeImpl) GetHandler() Handler {
 // SetHandler sets the handler function for this route.
 // This method supports method chaining by returning the RouteInterface.
 // The handler parameter should be a function that implements the Handler interface.
-func (r *routeImpl) SetHandler(handler Handler) RouteInterface {
+func (r *routeImpl) SetHandler(handler StdHandler) RouteInterface {
 	r.handler = handler
 	return r
 }
@@ -343,25 +343,25 @@ func (r *routeImpl) GetAfterMiddlewares() []MiddlewareInterface {
 
 // Get creates a new GET route with the given path and handler
 // It is a shortcut method that combines setting the method to GET, path, and handler.
-func Get(path string, handler Handler) RouteInterface {
+func Get(path string, handler StdHandler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetHandler(handler)
 }
 
 // Post creates a new POST route with the given path and handler
 // It is a shortcut method that combines setting the method to POST, path, and handler.
-func Post(path string, handler Handler) RouteInterface {
+func Post(path string, handler StdHandler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodPost).SetPath(path).SetHandler(handler)
 }
 
 // Put creates a new PUT route with the given path and handler
 // It is a shortcut method that combines setting the method to PUT, path, and handler.
-func Put(path string, handler Handler) RouteInterface {
+func Put(path string, handler StdHandler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodPut).SetPath(path).SetHandler(handler)
 }
 
 // Delete creates a new DELETE route with the given path and handler
 // It is a shortcut method that combines setting the method to DELETE, path, and handler.
-func Delete(path string, handler Handler) RouteInterface {
+func Delete(path string, handler StdHandler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodDelete).SetPath(path).SetHandler(handler)
 }
 

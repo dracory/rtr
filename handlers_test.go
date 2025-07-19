@@ -306,13 +306,13 @@ func TestHTMLResponsePreservesExistingContentType(t *testing.T) {
 func TestToHandlerHelpers(t *testing.T) {
 	tests := []struct {
 		name         string
-		handlerFunc  func() rtr.Handler
+		handlerFunc  func() rtr.StdHandler
 		expectedBody string
 		expectedCT   string
 	}{
 		{
 			name: "ToHandler simple string",
-			handlerFunc: func() rtr.Handler {
+			handlerFunc: func() rtr.StdHandler {
 				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 					return "<h1>HTML Test</h1>"
 				})
@@ -322,7 +322,7 @@ func TestToHandlerHelpers(t *testing.T) {
 		},
 		{
 			name: "ToHandler with manual headers",
-			handlerFunc: func() rtr.Handler {
+			handlerFunc: func() rtr.StdHandler {
 				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 					w.Header().Set("Content-Type", "application/json")
 					return `{"test": "json"}`
@@ -333,7 +333,7 @@ func TestToHandlerHelpers(t *testing.T) {
 		},
 		{
 			name: "ToHandler plain text",
-			handlerFunc: func() rtr.Handler {
+			handlerFunc: func() rtr.StdHandler {
 				return rtr.ToHandler(func(w http.ResponseWriter, r *http.Request) string {
 					return "Plain text content"
 				})

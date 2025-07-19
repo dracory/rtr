@@ -2,8 +2,9 @@ package rtr
 
 import "net/http"
 
-// Handler defines the function signature for HTTP request handlers.
-type Handler func(http.ResponseWriter, *http.Request)
+// StdHandler defines the function signature for standard HTTP request handlers.
+// This is the standard Go HTTP handler pattern, distinct from any potential named handler interfaces.
+type StdHandler func(http.ResponseWriter, *http.Request)
 
 // ErrorHandler is a convenience shorthand handler for error responses.
 // Returns an error that will be handled appropriately.
@@ -89,9 +90,9 @@ type RouteInterface interface {
 	SetPath(path string) RouteInterface
 
 	// GetHandler returns the handler function associated with this route.
-	GetHandler() Handler
+	GetHandler() StdHandler
 	// SetHandler sets the handler function for this route and returns the route for method chaining.
-	SetHandler(handler Handler) RouteInterface
+	SetHandler(handler StdHandler) RouteInterface
 
 	// GetStringHandler returns the string handler function associated with this route.
 	GetStringHandler() StringHandler
@@ -149,8 +150,6 @@ type RouteInterface interface {
 	AddAfterMiddlewares(middleware []MiddlewareInterface) RouteInterface
 	// GetAfterMiddlewares returns all middleware functions that will be executed after the route handler.
 	GetAfterMiddlewares() []MiddlewareInterface
-
-
 }
 
 // GroupInterface defines the interface for a group of routes.

@@ -205,7 +205,7 @@ func TestGroupImplGetHandler(t *testing.T) {
 	group := rtr.NewGroup()
 
 	// Use type assertion to access the underlying *groupImpl
-	if gi, ok := group.(interface{ GetHandler() rtr.Handler }); ok {
+	if gi, ok := group.(interface{ GetHandler() rtr.StdHandler }); ok {
 		// Get the handler (should be nil for groups)
 		handler := gi.GetHandler()
 
@@ -298,48 +298,48 @@ func TestComplexGroupStructure(t *testing.T) {
 // It verifies that routes can be added to a group with handlers that would interact with a database,
 // and that the routes can be properly accessed and verified.
 func TestGroupWithDatabaseIntegration(t *testing.T) {
-    // Create a group for database-related routes
-    dbGroup := rtr.NewGroup().SetPrefix("/db")
+	// Create a group for database-related routes
+	dbGroup := rtr.NewGroup().SetPrefix("/db")
 
-    // Add routes for database operations
-    dbGroup.AddRoute(rtr.NewRoute().
-        SetMethod("GET").
-        SetPath("/query").
-        SetHandler(func(w http.ResponseWriter, r *http.Request) {
-            // In a real test, this would query a database
-        }))
+	// Add routes for database operations
+	dbGroup.AddRoute(rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/query").
+		SetHandler(func(w http.ResponseWriter, r *http.Request) {
+			// In a real test, this would query a database
+		}))
 
-    dbGroup.AddRoute(rtr.NewRoute().
-        SetMethod("POST").
-        SetPath("/execute").
-        SetHandler(func(w http.ResponseWriter, r *http.Request) {
-            // In a real test, this would execute a database command
-        }))
+	dbGroup.AddRoute(rtr.NewRoute().
+		SetMethod("POST").
+		SetPath("/execute").
+		SetHandler(func(w http.ResponseWriter, r *http.Request) {
+			// In a real test, this would execute a database command
+		}))
 
-    // Verify the group structure
-    if dbGroup.GetPrefix() != "/db" {
-        t.Errorf("Expected group prefix /db, got %s", dbGroup.GetPrefix())
-    }
+	// Verify the group structure
+	if dbGroup.GetPrefix() != "/db" {
+		t.Errorf("Expected group prefix /db, got %s", dbGroup.GetPrefix())
+	}
 
-    if len(dbGroup.GetRoutes()) != 2 {
-        t.Errorf("Expected 2 routes, got %d", len(dbGroup.GetRoutes()))
-    }
+	if len(dbGroup.GetRoutes()) != 2 {
+		t.Errorf("Expected 2 routes, got %d", len(dbGroup.GetRoutes()))
+	}
 
-    // Verify the first route
-    queryRoute := dbGroup.GetRoutes()[0]
-    if queryRoute.GetMethod() != "GET" {
-        t.Errorf("Expected query route method GET, got %s", queryRoute.GetMethod())
-    }
+	// Verify the first route
+	queryRoute := dbGroup.GetRoutes()[0]
+	if queryRoute.GetMethod() != "GET" {
+		t.Errorf("Expected query route method GET, got %s", queryRoute.GetMethod())
+	}
 
-    if queryRoute.GetPath() != "/query" {
-        t.Errorf("Expected query route path /query, got %s", queryRoute.GetPath())
-    }
+	if queryRoute.GetPath() != "/query" {
+		t.Errorf("Expected query route path /query, got %s", queryRoute.GetPath())
+	}
 
-    // Verify the second route
-    executeRoute := dbGroup.GetRoutes()[1]
-    if executeRoute.GetMethod() != "POST" {
-        t.Errorf("Expected execute route method POST, got %s", executeRoute.GetMethod())
-    }
+	// Verify the second route
+	executeRoute := dbGroup.GetRoutes()[1]
+	if executeRoute.GetMethod() != "POST" {
+		t.Errorf("Expected execute route method POST, got %s", executeRoute.GetMethod())
+	}
 	if executeRoute.GetMethod() != "POST" {
 		t.Errorf("Expected execute route method POST, got %s", executeRoute.GetMethod())
 	}

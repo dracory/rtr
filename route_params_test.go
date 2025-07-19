@@ -69,7 +69,7 @@ func TestPathParameters(t *testing.T) {
 
 			// Create a test handler that captures the request
 			var capturedParams map[string]string
-			var handler rtr.Handler = func(w http.ResponseWriter, r *http.Request) {
+			var handler rtr.StdHandler = func(w http.ResponseWriter, r *http.Request) {
 				if tc.handler != nil {
 					tc.handler(w, r)
 				}

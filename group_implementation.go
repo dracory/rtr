@@ -111,6 +111,6 @@ func (g *groupImpl) GetAfterMiddlewares() []MiddlewareInterface {
 
 // GetHandler returns nil as groups do not have a single handler.
 // This method is implemented to satisfy the RouteInterface but is not used for groups.
-func (g *groupImpl) GetHandler() Handler {
+func (g *groupImpl) GetHandler() StdHandler {
 	return nil // Groups do not have a single handler
 }
