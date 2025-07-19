@@ -2,6 +2,32 @@ package rtr
 
 import "net/http"
 
+// ===========================================================================
+// = CONSTTRUCTORS
+// ===========================================================================
+
+// NewMiddleware creates a new named middleware with the given name and handler.
+// This is the main factory function for creating named middleware.
+func NewMiddleware(name string, handler StdMiddleware) MiddlewareInterface {
+	return &middlewareImpl{
+		name:    name,
+		handler: handler,
+	}
+}
+
+// NewAnonymousMiddleware creates a new middleware without a name.
+// This is useful for backward compatibility with existing code that uses anonymous middleware.
+func NewAnonymousMiddleware(handler StdMiddleware) MiddlewareInterface {
+	return &middlewareImpl{
+		name:    "",
+		handler: handler,
+	}
+}
+
+// ===========================================================================
+// = IMPLEMENTATION
+// ===========================================================================
+
 // middlewareImpl implements the MiddlewareInterface
 // It represents a named middleware that can be applied to routes, groups, or routers.
 // This implementation follows the same pattern as routeImpl in the codebase.
@@ -48,24 +74,6 @@ func (m *middlewareImpl) Execute(next http.Handler) http.Handler {
 		return next
 	}
 	return m.handler(next)
-}
-
-// NewMiddleware creates a new named middleware with the given name and handler.
-// This is the main factory function for creating named middleware.
-func NewMiddleware(name string, handler StdMiddleware) MiddlewareInterface {
-	return &middlewareImpl{
-		name:    name,
-		handler: handler,
-	}
-}
-
-// NewAnonymousMiddleware creates a new middleware without a name.
-// This is useful for backward compatibility with existing code that uses anonymous middleware.
-func NewAnonymousMiddleware(handler StdMiddleware) MiddlewareInterface {
-	return &middlewareImpl{
-		name:    "",
-		handler: handler,
-	}
 }
 
 // MiddlewareFromFunction converts a StdMiddleware function to a MiddlewareInterface.

@@ -21,6 +21,7 @@ A flexible and feature-rich HTTP router implementation for Go applications that 
 - **Nested Groups**: Create hierarchical route structures with nested groups
 - **Flexible API**: Chainable methods for intuitive route and group configuration
 - **Standard Interface**: Implements `http.Handler` interface for seamless integration
+- **Declarative Configuration**: [Define routes using configuration objects](./docs/declarative.md) for better maintainability and tooling support
 
 ## Middleware
 
