@@ -86,6 +86,252 @@ route := router.NewRoute()
     .SetHandler(handleUsers)
 ```
 
+## Handler Types
+
+The router supports multiple handler types that provide different levels of convenience and functionality. Each handler type is designed for specific use cases and automatically handles appropriate HTTP headers.
+
+### Handler Priority
+
+When multiple handlers are set on a route, they are prioritized in the following order:
+
+1. **Handler** - Standard HTTP handler (highest priority)
+2. **StringHandler** - Generic string handler
+3. **HTMLHandler** - HTML content handler
+4. **JSONHandler** - JSON content handler
+5. **CSSHandler** - CSS stylesheet handler
+6. **XMLHandler** - XML content handler
+7. **TextHandler** - Plain text handler
+8. **JSHandler** - JavaScript content handler
+9. **ErrorHandler** - Generic error-returning handler (lowest priority)
+
+### Standard Handler
+
+The traditional HTTP handler with full control over the response:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/users").
+    SetHandler(func(w http.ResponseWriter, req *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte(`{"users": []}`))
+    }))
+```
+
+### StringHandler
+
+A generic string handler that returns content without setting any headers automatically. Useful when you need full control over headers but want the convenience of returning a string:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/custom").
+    SetStringHandler(func(w http.ResponseWriter, req *http.Request) string {
+        w.Header().Set("Content-Type", "text/custom")
+        w.Header().Set("X-Custom-Header", "value")
+        return "Custom content with custom headers"
+    }))
+```
+
+### HTMLHandler
+
+Returns HTML content and automatically sets `Content-Type: text/html; charset=utf-8`:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/page").
+    SetHTMLHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `<!DOCTYPE html>
+<html>
+<head><title>My Page</title></head>
+<body><h1>Hello World!</h1></body>
+</html>`
+    }))
+```
+
+### JSONHandler
+
+Returns JSON content and automatically sets `Content-Type: application/json`:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/api/users").
+    SetJSONHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `{
+    "users": [
+        {"id": 1, "name": "Alice"},
+        {"id": 2, "name": "Bob"}
+    ]
+}`
+    }))
+```
+
+### CSSHandler
+
+Returns CSS content and automatically sets `Content-Type: text/css`:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/styles.css").
+    SetCSSHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
+h1 {
+    color: #333;
+    border-bottom: 2px solid #007acc;
+}`
+    }))
+```
+
+### XMLHandler
+
+Returns XML content and automatically sets `Content-Type: application/xml`:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/api/data.xml").
+    SetXMLHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user id="1">
+        <name>Alice</name>
+        <email>alice@example.com</email>
+    </user>
+</users>`
+    }))
+```
+
+### TextHandler
+
+Returns plain text content and automatically sets `Content-Type: text/plain; charset=utf-8`:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/robots.txt").
+    SetTextHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `User-agent: *
+Disallow: /admin/
+Allow: /
+
+Sitemap: https://example.com/sitemap.xml`
+    }))
+```
+
+### JSHandler
+
+Returns JavaScript content and automatically sets `Content-Type: application/javascript`:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/script.js").
+    SetJSHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `console.log("Hello from RTR Router!");
+
+function initApp() {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('App initialized');
+    });
+}
+
+initApp();`
+    }))
+```
+
+### ErrorHandler
+
+Handles errors by returning an error value. If the error is `nil`, no content is written. If an error is returned, the error message is written to the response:
+
+```go
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/might-fail").
+    SetErrorHandler(func(w http.ResponseWriter, req *http.Request) error {
+        // Some logic that might fail
+        if someCondition {
+            return errors.New("something went wrong")
+        }
+        // Success case - no error, no output
+        return nil
+    }))
+```
+
+### Handler Combinations
+
+You can set multiple handlers on a single route. The router will use the highest priority handler that is set:
+
+```go
+// This route has both HTML and JSON handlers
+// HTMLHandler takes priority and will be used
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/content").
+    SetHTMLHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return "<h1>HTML Content</h1>"  // This will be used
+    }).
+    SetJSONHandler(func(w http.ResponseWriter, req *http.Request) string {
+        return `{"message": "JSON Content"}`  // This will be ignored
+    }))
+```
+
+### Dynamic Content with Parameters
+
+All handler types work seamlessly with path parameters:
+
+```go
+// HTML handler with parameters
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/user/:id").
+    SetHTMLHandler(func(w http.ResponseWriter, req *http.Request) string {
+        userID := rtr.MustGetParam(req, "id")
+        return fmt.Sprintf(`<h1>User Profile</h1><p>User ID: %s</p>`, userID)
+    }))
+
+// JSON handler with parameters
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/api/user/:id").
+    SetJSONHandler(func(w http.ResponseWriter, req *http.Request) string {
+        userID := rtr.MustGetParam(req, "id")
+        return fmt.Sprintf(`{"user": {"id": "%s", "name": "User %s"}}`, userID, userID)
+    }))
+```
+
+### Response Helper Functions
+
+The router provides response helper functions that you can use directly in standard handlers:
+
+```go
+// Using response helpers in a standard handler
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/manual").
+    SetHandler(func(w http.ResponseWriter, req *http.Request) {
+        // These functions set appropriate headers and write content
+        rtr.JSONResponse(w, req, `{"message": "Hello JSON"}`)
+        // or
+        rtr.HTMLResponse(w, req, "<h1>Hello HTML</h1>")
+        // or
+        rtr.CSSResponse(w, req, "body { color: red; }")
+        // or
+        rtr.XMLResponse(w, req, "<?xml version='1.0'?><root></root>")
+        // or
+        rtr.TextResponse(w, req, "Hello Text")
+        // or
+        rtr.JSResponse(w, req, "console.log('Hello JS');")
+    }))
+```
+
 ### Groups
 
 Route groups that share common prefixes and middleware.
