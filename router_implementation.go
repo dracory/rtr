@@ -4,13 +4,11 @@ import (
 	"context"
 	"net/http"
 	"strings"
-
-	"github.com/dracory/rtr/middlewares"
 )
 
 // NewRouter creates and returns a new RouterInterface implementation.
 // This is the main entry point for creating a new router.
-// By default, it includes recovery middleware to handle panics.
+// The router starts with no default middlewares - users should add middlewares as needed.
 func NewRouter() RouterInterface {
 	r := &routerImpl{
 		routes:  make([]RouteInterface, 0),
@@ -19,14 +17,8 @@ func NewRouter() RouterInterface {
 		prefix:  "",
 	}
 
-	// Add recovery middleware by default
-	defaultMiddlewares := middlewares.DefaultMiddlewares()
-	// Convert middlewares.Middleware to rtr.Middleware
-	rtrMiddlewares := make([]StdMiddleware, len(defaultMiddlewares))
-	for i, mw := range defaultMiddlewares {
-		rtrMiddlewares[i] = StdMiddleware(mw)
-	}
-	r.AddBeforeMiddlewares(MiddlewaresToInterfaces(rtrMiddlewares))
+	// Router starts with no default middlewares
+	// Users can add middlewares as needed using AddBeforeMiddlewares() or AddAfterMiddlewares()
 	return r
 }
 

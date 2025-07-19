@@ -90,7 +90,8 @@ func TestList(t *testing.T) {
 // TestGetMiddlewareName tests the middleware name extraction
 func TestGetMiddlewareName(t *testing.T) {
 	// Test with RecoveryMiddleware
-	name := rtr.GetMiddlewareName(middlewares.RecoveryMiddleware)
+	recoveryMw := middlewares.RecoveryMiddleware()
+	name := rtr.GetMiddlewareName(recoveryMw.GetHandler())
 	if name == "" {
 		t.Error("Expected non-empty middleware name")
 	}

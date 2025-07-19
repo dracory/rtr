@@ -23,8 +23,9 @@ func TestRecoveryMiddleware(t *testing.T) {
 	// Create a ResponseRecorder to record the response
 	rr := httptest.NewRecorder()
 
-	// Wrap the panic handler with our recovery middleware
-	handler := middlewares.RecoveryMiddleware(panicHandler)
+	// Create the recovery middleware and execute it with the panic handler
+	recoveryMw := middlewares.RecoveryMiddleware()
+	handler := recoveryMw.Execute(panicHandler)
 
 	// Call ServeHTTP which should recover from the panic
 	handler.ServeHTTP(rr, req)
@@ -40,14 +41,5 @@ func TestRecoveryMiddleware(t *testing.T) {
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
-	}
-}
-
-func TestDefaultMiddlewares(t *testing.T) {
-	middlewareList := middlewares.DefaultMiddlewares()
-
-	// Check that we have exactly one middleware (the recovery middleware)
-	if len(middlewareList) != 1 {
-		t.Errorf("expected 1 default middleware, got %d", len(middlewareList))
 	}
 }

@@ -192,8 +192,8 @@ func TestGroupConfigChaining(t *testing.T) {
 		rtr.GET("/users", handler),
 		rtr.POST("/users", handler),
 	).WithName("API Group").
-		WithBeforeMiddleware(middleware).
-		WithAfterMiddleware(middleware)
+		WithBeforeMiddleware(rtr.NewAnonymousMiddleware(middleware)).
+		WithAfterMiddleware(rtr.NewAnonymousMiddleware(middleware))
 
 	if group.Name != "API Group" {
 		t.Error("Group WithName chaining failed")

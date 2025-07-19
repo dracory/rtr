@@ -117,7 +117,7 @@ func (r *routeImpl) GetHandler() StdHandler {
 
 	// Priority 2: StringHandler - convert to standard Handler (no automatic headers)
 	if r.stringHandler != nil {
-		return ToHandler(r.stringHandler)
+		return ToStdHandler(r.stringHandler)
 	}
 
 	// Priority 3: HTMLHandler - convert to standard Handler with HTML headers
