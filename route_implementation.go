@@ -59,6 +59,8 @@ type routeImpl struct {
 	afterMiddlewares []Middleware
 }
 
+var _ RouteInterface = (*routeImpl)(nil)
+
 // GetMethod returns the HTTP method associated with this route.
 // Returns the string representation of the HTTP method (e.g., "GET", "POST").
 func (r *routeImpl) GetMethod() string {

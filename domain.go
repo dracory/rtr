@@ -14,6 +14,8 @@ type domainImpl struct {
 	afterMiddlewares  []Middleware
 }
 
+var _ DomainInterface = (*domainImpl)(nil)
+
 // NewDomain creates a new domain with the given patterns
 func NewDomain(patterns ...string) DomainInterface {
 	return &domainImpl{

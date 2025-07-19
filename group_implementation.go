@@ -19,6 +19,8 @@ type groupImpl struct {
 	afterMiddlewares []Middleware
 }
 
+var _ GroupInterface = (*groupImpl)(nil)
+
 // GetPrefix returns the URL path prefix associated with this group.
 // Returns the string representation of the prefix (e.g., "/api", "/admin").
 func (g *groupImpl) GetPrefix() string {

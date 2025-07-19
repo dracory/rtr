@@ -45,6 +45,8 @@ type routerImpl struct {
 	afterMiddlewares []Middleware
 }
 
+var _ RouterInterface = (*routerImpl)(nil)
+
 // GetPrefix returns the URL path prefix associated with this router.
 // Returns the string representation of the prefix.
 func (r *routerImpl) GetPrefix() string {
