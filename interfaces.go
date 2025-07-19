@@ -184,6 +184,10 @@ type RouterInterface interface {
 	// GetDomains returns all domains that belong to this router
 	GetDomains() []DomainInterface
 
+	// List displays the router's configuration in formatted tables for debugging and documentation
+	// Shows global middleware, domains, direct routes, and route groups
+	List()
+
 	// ServeHTTP implements the http.Handler interface.
 	// It matches the incoming request to the appropriate route and executes the handler.
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
