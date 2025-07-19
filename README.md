@@ -151,6 +151,70 @@ route.AddBeforeMiddlewares([]router.Middleware{
 })
 ```
 
+## Declarative API
+
+In addition to the imperative API shown above, the router also supports a **declarative configuration approach** that allows you to define your entire routing structure as data structures.
+
+### Basic Declarative Usage
+
+```go
+config := rtr.RouterConfig{
+    Name: "My API",
+    Routes: []rtr.RouteConfig{
+        rtr.GET("/", homeHandler).WithName("Home"),
+        rtr.POST("/users", createUserHandler).WithName("Create User"),
+    },
+    Groups: []rtr.GroupConfig{
+        rtr.Group("/api",
+            rtr.GET("/users", usersHandler).WithName("List Users"),
+            rtr.GET("/products", productsHandler).WithName("List Products"),
+        ).WithName("API Group"),
+    },
+}
+
+router := rtr.NewRouterFromConfig(config)
+```
+
+### Declarative Route Helpers
+
+```go
+// HTTP method helpers
+rtr.GET("/users", handler)     // GET route
+rtr.POST("/users", handler)    // POST route
+rtr.PUT("/users/:id", handler) // PUT route
+rtr.DELETE("/users/:id", handler) // DELETE route
+
+// Chainable configuration
+rtr.GET("/users", handler).
+    WithName("List Users").
+    WithBeforeMiddleware(authMiddleware).
+    WithMetadata("version", "1.0")
+```
+
+### Hybrid Approach
+
+You can mix declarative and imperative approaches:
+
+```go
+// Start with declarative configuration
+config := rtr.RouterConfig{
+    Routes: []rtr.RouteConfig{
+        rtr.GET("/", homeHandler).WithName("Home"),
+    },
+}
+router := rtr.NewRouterFromConfig(config)
+
+// Add imperative routes
+router.AddRoute(rtr.Get("/health", healthHandler).SetName("Health"))
+```
+
+### Benefits of Declarative API
+
+- **Serializable**: Configuration can be exported to JSON/YAML
+- **Testable**: Easier to unit test route configurations
+- **Readable**: Clear structure and intent
+- **Tooling-friendly**: Better IDE support and validation
+
 ## Path Parameters
 
 The router supports flexible path parameter extraction with the following features:
@@ -378,6 +442,81 @@ The package provides shortcut methods for common HTTP methods:
 - `Delete(path string, handler Handler) RouteInterface` - Creates a DELETE route
 
 These methods automatically set the HTTP method, path, and handler, making route creation more concise.
+
+## Route Listing and Debugging
+
+The router provides a built-in `List()` method for debugging and documentation purposes. This method displays the router's configuration in formatted tables, making it easy to visualize your routing structure.
+
+### Using the List Method
+
+```go
+router := rtr.NewRouter()
+
+// Add some routes and middleware
+router.AddBeforeMiddlewares([]rtr.Middleware{loggingMiddleware})
+router.AddRoute(rtr.Get("/", homeHandler).SetName("Home"))
+
+// Create a group
+apiGroup := rtr.NewGroup().SetPrefix("/api")
+apiGroup.AddRoute(rtr.Get("/users", usersHandler).SetName("List Users"))
+router.AddGroup(apiGroup)
+
+// Display the router configuration
+router.List()
+```
+
+### Output Format
+
+The `List()` method displays:
+
+1. **Global Middleware Table**: Shows before and after middleware applied at the router level
+2. **Domain Routes Tables**: Shows routes organized by domain (if using domain-based routing)
+3. **Direct Routes Table**: Shows routes added directly to the router
+4. **Group Routes Tables**: Shows routes organized by groups with their prefixes
+
+#### Example Output
+
+```
++------------------------------------+
+| GLOBAL BEFORE MIDDLEWARE LIST (TOTAL: 2) |
++---+--------------------------------+------+
+| # | MIDDLEWARE NAME                | TYPE |
++---+--------------------------------+------+
+| 1 | RecoveryMiddleware             | Before |
+| 2 | LoggingMiddleware              | Before |
++---+--------------------------------+------+
+
++---------------------------------------------------------------+
+| DIRECT ROUTES LIST (TOTAL: 1)                                |
++---+------------+--------+------------+---------------------+
+| # | ROUTE PATH | METHOD | ROUTE NAME | MIDDLEWARE LIST     |
++---+------------+--------+------------+---------------------+
+| 1 | /          | GET    | Home       | none                |
++---+------------+--------+------------+---------------------+
+
++---------------------------------------------------------------+
+| GROUP ROUTES [/api] (TOTAL: 1)                               |
++---+------------+--------+------------+---------------------+
+| # | ROUTE PATH | METHOD | ROUTE NAME | MIDDLEWARE LIST     |
++---+------------+--------+------------+---------------------+
+| 1 | /api/users | GET    | List Users | none                |
++---+------------+--------+------------+---------------------+
+```
+
+### Middleware Name Detection
+
+The List method attempts to extract meaningful names from middleware functions using reflection:
+
+- **Named functions**: Shows the actual function name (e.g., `RecoveryMiddleware`)
+- **Anonymous functions**: Shows `anonymous` or attempts to extract from closure context
+- **Method receivers**: Shows the method name when middleware is defined on a struct
+
+### Use Cases
+
+- **Development**: Quickly verify your routing configuration
+- **Debugging**: Identify routing conflicts or missing routes
+- **Documentation**: Generate route documentation for your API
+- **Testing**: Validate that routes are configured as expected
 
 ## Testing
 
