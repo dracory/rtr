@@ -6,6 +6,18 @@ import (
 	"strings"
 )
 
+// responseRecorder is a wrapper around http.ResponseWriter that captures the status code
+type responseRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (rw *responseRecorder) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+
 // NewRouter creates and returns a new RouterInterface implementation.
 // This is the main entry point for creating a new router.
 // The router starts with no default middlewares - users should add middlewares as needed.
@@ -227,13 +239,13 @@ func (r *routerImpl) findMatchingRoute(req *http.Request) (RouteInterface, http.
 				ctx := context.WithValue(req.Context(), ParamsKey, params)
 				req = req.WithContext(ctx)
 			}
-			return route, r.wrapWithMiddlewares(route, req)
+			return route, r.buildHandler(route, nil, nil)
 		}
 	}
 
 	// Check routes in groups
 	for _, group := range r.groups {
-		if route, handler := r.findMatchingRouteInGroup(group, req, ""); route != nil {
+		if route, handler := r.findMatchingRouteInGroup(group, req, nil); route != nil {
 			return route, handler
 		}
 	}
@@ -242,14 +254,18 @@ func (r *routerImpl) findMatchingRoute(req *http.Request) (RouteInterface, http.
 }
 
 // findMatchingRouteInGroup recursively searches for a matching route in a group and its subgroups
-func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Request, parentPath string) (RouteInterface, http.Handler) {
+func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Request, parentGroups []GroupInterface) (RouteInterface, http.Handler) {
 	// Combine parent path with group prefix
-	groupPath := parentPath + group.GetPrefix()
+	currentGroups := append(parentGroups, group)
 
 	// Check routes in the current group
 	for _, route := range group.GetRoutes() {
 		// Create a full path for matching
-		fullPath := groupPath + route.GetPath()
+		fullPath := ""
+		for _, g := range currentGroups {
+			fullPath += g.GetPrefix()
+		}
+		fullPath += route.GetPath()
 
 		// Create a temporary route for matching
 		tempRoute := &routeImpl{
@@ -277,22 +293,13 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 			}
 
 			// Return the original route (not the temp one) with the wrapped handler
-			return route, r.wrapWithGroupMiddlewares(route, group, req, parentPath)
+			return route, r.buildHandler(route, currentGroups, nil)
 		}
 	}
 
 	// Check subgroups
 	for _, subgroup := range group.GetGroups() {
-		// Create a new group that includes the current group's middlewares
-		nestedGroup := &groupImpl{
-			prefix:            subgroup.GetPrefix(),
-			routes:            subgroup.GetRoutes(),
-			groups:            subgroup.GetGroups(),
-			beforeMiddlewares: append(group.GetBeforeMiddlewares(), subgroup.GetBeforeMiddlewares()...),
-			afterMiddlewares:  append(group.GetAfterMiddlewares(), subgroup.GetAfterMiddlewares()...),
-		}
-
-		if route, handler := r.findMatchingRouteInGroup(nestedGroup, req, groupPath); route != nil {
+		if route, handler := r.findMatchingRouteInGroup(subgroup, req, currentGroups); route != nil {
 			return route, handler
 		}
 	}
@@ -332,72 +339,4 @@ func (r *routerImpl) routeMatches(route RouteInterface, req *http.Request) (bool
 
 	// Handle parameterized routes
 	return matchParameterizedRoute(routePath, requestPath, route.(*routeImpl).paramNames)
-}
-
-// wrapWithMiddlewares wraps a route's handler with its middlewares and the router's middlewares
-func (r *routerImpl) wrapWithMiddlewares(route RouteInterface, req *http.Request) http.Handler {
-	// Start with the route's handler
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Use the request from the parameter to preserve the context with parameters
-		route.GetHandler()(w, req)
-	})
-
-	// Collect all middlewares (route + router)
-	var allMiddlewares []MiddlewareInterface
-
-	// Add route's middlewares (already MiddlewareInterface)
-	allMiddlewares = append(allMiddlewares, route.GetBeforeMiddlewares()...)
-
-	// Add router's before middlewares (already MiddlewareInterface)
-	allMiddlewares = append(allMiddlewares, r.beforeMiddlewares...)
-
-	// Apply before middlewares (in reverse order so they execute in the order they were added)
-	for i := len(allMiddlewares) - 1; i >= 0; i-- {
-		handler = allMiddlewares[i].Execute(handler)
-	}
-
-	// Collect after middlewares
-	var afterMiddlewares []MiddlewareInterface
-
-	// Add route's after middlewares (already MiddlewareInterface)
-	afterMiddlewares = append(afterMiddlewares, route.GetAfterMiddlewares()...)
-
-	// Add router's after middlewares (already MiddlewareInterface)
-	afterMiddlewares = append(afterMiddlewares, r.afterMiddlewares...)
-
-	// Apply after middlewares (in reverse order)
-	for i := len(afterMiddlewares) - 1; i >= 0; i-- {
-		handler = afterMiddlewares[i].Execute(handler)
-	}
-
-	return handler
-}
-
-// wrapWithGroupMiddlewares wraps a route's handler with its middlewares, the group's middlewares, and the router's middlewares
-func (r *routerImpl) wrapWithGroupMiddlewares(route RouteInterface, group GroupInterface, req *http.Request, parentPath string) http.Handler {
-	// Start with the route's handler
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Clone the request with the current context to ensure we have the latest parameters
-		req = r.WithContext(req.Context())
-		route.GetHandler()(w, req)
-	})
-
-	// Collect before middlewares in execution order (route -> group -> router)
-	var beforeMiddlewares []MiddlewareInterface
-
-	// Add route's before middlewares (already MiddlewareInterface)
-	beforeMiddlewares = append(beforeMiddlewares, route.GetBeforeMiddlewares()...)
-
-	// Add group's before middlewares (already MiddlewareInterface)
-	beforeMiddlewares = append(beforeMiddlewares, group.GetBeforeMiddlewares()...)
-
-	// Add router's before middlewares (already MiddlewareInterface)
-	beforeMiddlewares = append(beforeMiddlewares, r.beforeMiddlewares...)
-
-	// Apply before middlewares (in reverse order so they execute in the order they were added)
-	for i := len(beforeMiddlewares) - 1; i >= 0; i-- {
-		handler = beforeMiddlewares[i].Execute(handler)
-	}
-
-	return handler
 }

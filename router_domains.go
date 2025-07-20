@@ -39,145 +39,19 @@ func (r *routerImpl) findMatchingRouteInDomain(domain DomainInterface, req *http
 		if match, params := r.routeMatches(route, req); match {
 			// Add params to request context if any
 			if len(params) > 0 {
-				ctx := context.WithValue(req.Context(), "params", params)
+				ctx := context.WithValue(req.Context(), ParamsKey, params)
 				req = req.WithContext(ctx)
 			}
-			return route, r.wrapWithDomainMiddlewares(route, domain, req)
+			return route, r.buildHandler(route, nil, domain)
 		}
 	}
 
 	// Check route groups in domain
 	for _, group := range domain.GetGroups() {
-		if route, _ := r.findMatchingRouteInGroup(group, req, ""); route != nil {
-			return route, r.wrapWithDomainGroupMiddlewares(route, group, domain, req)
+		if route, handler := r.findMatchingRouteInGroup(group, req, nil); route != nil {
+			return route, handler
 		}
 	}
 
 	return nil, nil
-}
-
-// wrapWithDomainMiddlewares wraps a route's handler with domain and route middlewares
-func (r *routerImpl) wrapWithDomainMiddlewares(route RouteInterface, domain DomainInterface, req *http.Request) http.Handler {
-	// Start with the route's handler
-	handler := http.Handler(http.HandlerFunc(route.GetHandler()))
-
-	// Apply route's before middlewares in order
-	for i := len(route.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
-		mw := route.GetBeforeMiddlewares()[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Apply domain's before middlewares in order
-	for i := len(domain.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
-		mw := domain.GetBeforeMiddlewares()[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Apply router's before middlewares in order
-	for i := len(r.beforeMiddlewares) - 1; i >= 0; i-- {
-		mw := r.beforeMiddlewares[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Create a final handler that wraps the chain with after middlewares
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Call the handler chain
-		handler.ServeHTTP(w, req)
-
-		// After handler execution, run after middlewares in reverse order
-		afterHandler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-
-		// Apply route's after middlewares in reverse order
-		for _, mw := range route.GetAfterMiddlewares() {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Apply domain's after middlewares in reverse order
-		for _, mw := range domain.GetAfterMiddlewares() {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Apply router's after middlewares in reverse order
-		for _, mw := range r.afterMiddlewares {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Execute the after middlewares if any exist
-		hasAfterMiddlewares := len(route.GetAfterMiddlewares()) > 0 || 
-			len(domain.GetAfterMiddlewares()) > 0 || 
-			len(r.afterMiddlewares) > 0
-
-		if hasAfterMiddlewares {
-			afterHandler.ServeHTTP(w, req)
-		}
-	})
-}
-
-// wrapWithDomainGroupMiddlewares wraps a route's handler with domain, group, and route middlewares
-func (r *routerImpl) wrapWithDomainGroupMiddlewares(route RouteInterface, group GroupInterface, domain DomainInterface, req *http.Request) http.Handler {
-	// Start with the route's handler
-	handler := http.Handler(http.HandlerFunc(route.GetHandler()))
-
-	// Apply route's before middlewares in order
-	for i := len(route.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
-		mw := route.GetBeforeMiddlewares()[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Apply group's before middlewares in order
-	for i := len(group.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
-		mw := group.GetBeforeMiddlewares()[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Apply domain's before middlewares in order
-	for i := len(domain.GetBeforeMiddlewares()) - 1; i >= 0; i-- {
-		mw := domain.GetBeforeMiddlewares()[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Apply router's before middlewares in order
-	for i := len(r.beforeMiddlewares) - 1; i >= 0; i-- {
-		mw := r.beforeMiddlewares[i]
-		handler = mw.Execute(handler)
-	}
-
-	// Create a final handler that wraps the chain with after middlewares
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Call the handler chain
-		handler.ServeHTTP(w, req)
-
-		// After handler execution, run after middlewares in reverse order
-		afterHandler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-
-		// Apply route's after middlewares in reverse order
-		for _, mw := range route.GetAfterMiddlewares() {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Apply group's after middlewares in reverse order
-		for _, mw := range group.GetAfterMiddlewares() {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Apply domain's after middlewares in reverse order
-		for _, mw := range domain.GetAfterMiddlewares() {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Apply router's after middlewares in reverse order
-		for _, mw := range r.afterMiddlewares {
-			afterHandler = mw.Execute(afterHandler)
-		}
-
-		// Execute the after middlewares if any exist
-		hasAfterMiddlewares := len(route.GetAfterMiddlewares()) > 0 ||
-			len(group.GetAfterMiddlewares()) > 0 ||
-			len(domain.GetAfterMiddlewares()) > 0 ||
-			len(r.afterMiddlewares) > 0
-
-		if hasAfterMiddlewares {
-			afterHandler.ServeHTTP(w, req)
-		}
-	})
 }
