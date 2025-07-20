@@ -158,7 +158,7 @@ func (r *routerImpl) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // matchParameterizedRoute checks if a parameterized route matches the request path and extracts parameters
-func matchParameterizedRoute(routePath, requestPath string, paramNames []string) (bool, map[string]string) {
+func matchParameterizedRoute(routePath, requestPath string) (bool, map[string]string) {
 	routeSegments := strings.Split(routePath, "/")
 	requestSegments := strings.Split(requestPath, "/")
 	hasMoreSegments := len(requestSegments) > len(routeSegments)
@@ -337,5 +337,5 @@ func (r *routerImpl) routeMatches(route RouteInterface, req *http.Request) (bool
 	}
 
 	// Handle parameterized routes
-	return matchParameterizedRoute(routePath, requestPath, route.(*routeImpl).paramNames)
+	return matchParameterizedRoute(routePath, requestPath)
 }

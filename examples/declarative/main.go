@@ -36,7 +36,7 @@ func main() {
 	showHandlerRegistryExample(registry)
 
 	fmt.Println("\n=== Runtime Router Creation ===")
-	showRuntimeRouterCreation(domain, registry)
+	showRuntimeRouterCreation(domain)
 }
 
 // CreateDeclarativeConfiguration demonstrates pure declarative configuration
@@ -351,7 +351,7 @@ func showHandlerRegistryExample(registry *rtr.HandlerRegistry) {
 }
 
 // showRuntimeRouterCreation demonstrates how to build a runtime router from declarative config
-func showRuntimeRouterCreation(domain *rtr.Domain, registry *rtr.HandlerRegistry) {
+func showRuntimeRouterCreation(domain *rtr.Domain) {
 	fmt.Println("Runtime Router Creation Process:")
 	fmt.Printf("1. Domain configuration loaded: %s\n", domain.Name)
 	fmt.Printf("2. Handler registry populated with %d routes and middleware\n", len(domain.Items))
