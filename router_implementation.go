@@ -6,18 +6,6 @@ import (
 	"strings"
 )
 
-// responseRecorder is a wrapper around http.ResponseWriter that captures the status code
-type responseRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (rw *responseRecorder) WriteHeader(code int) {
-	rw.status = code
-	rw.ResponseWriter.WriteHeader(code)
-}
-
-
 // NewRouter creates and returns a new RouterInterface implementation.
 // This is the main entry point for creating a new router.
 // The router starts with no default middlewares - users should add middlewares as needed.
@@ -233,22 +221,22 @@ func matchParameterizedRoute(routePath, requestPath string, paramNames []string)
 func (r *routerImpl) findMatchingRoute(req *http.Request) (RouteInterface, http.Handler) {
 	// Create a copy of the request to avoid mutating the original
 	reqCopy := req.Clone(req.Context())
-	
+
 	// Check direct routes on the router
 	for _, route := range r.routes {
 		// Create a fresh copy of the request for each route check
 		rc := reqCopy.Clone(reqCopy.Context())
-		
+
 		if match, params := r.routeMatches(route, rc); match {
 			// Add params to request context if any
 			if len(params) > 0 {
 				ctx := context.WithValue(rc.Context(), ParamsKey, params)
 				rc = rc.WithContext(ctx)
 			}
-			
+
 			// Create a handler that will use the correct request with parameters
 			handler := r.buildHandler(route, nil, nil)
-			
+
 			// Return a handler that will use the request with the updated context
 			return route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				handler.ServeHTTP(w, rc)
@@ -290,7 +278,7 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 
 		// Create a copy of the request for this route check
 		reqCopy := req.Clone(req.Context())
-		
+
 		if match, params := r.routeMatches(tempRoute, reqCopy); match {
 			// Create a new request with the updated context containing the parameters
 			if len(params) > 0 {
@@ -299,8 +287,8 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 			}
 
 			// Create a handler that will use the correct request with parameters
-		handler := r.buildHandler(route, currentGroups, nil)
-			
+			handler := r.buildHandler(route, currentGroups, nil)
+
 			// Return a handler that will use the request with the updated context
 			return route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				handler.ServeHTTP(w, reqCopy)
