@@ -10,45 +10,53 @@ func (r *routerImpl) buildHandler(route RouteInterface, groups []GroupInterface,
 	// Start with the route's own handler
 	handler := http.Handler(http.HandlerFunc(route.GetHandler()))
 
-	// Collect all middleware slices in the correct order
-	var allMiddlewares [][]MiddlewareInterface
+	// 1. First, collect all after middlewares in the order they should be applied (innermost first)
+	var afterMiddlewares []MiddlewareInterface
 
-	// 1. Add global before middlewares (outermost)
-	allMiddlewares = append(allMiddlewares, r.GetBeforeMiddlewares())
+	// 1.1 Add route after middlewares (innermost)
+	afterMiddlewares = append(afterMiddlewares, route.GetAfterMiddlewares()...)
 
-	// 2. Add domain before middlewares
-	if domain != nil {
-		allMiddlewares = append(allMiddlewares, domain.GetBeforeMiddlewares())
-	}
-
-	// 3. Add group before middlewares (from outermost to innermost)
-	for _, group := range groups {
-		allMiddlewares = append(allMiddlewares, group.GetBeforeMiddlewares())
-	}
-
-	// 4. Add route before middlewares (innermost before handler)
-	allMiddlewares = append(allMiddlewares, route.GetBeforeMiddlewares())
-
-	// 5. Add route after middlewares (innermost after handler)
-	allMiddlewares = append(allMiddlewares, route.GetAfterMiddlewares())
-
-	// 6. Add group after middlewares (from innermost to outermost)
+	// 1.2 Add group after middlewares (from innermost to outermost)
 	for i := len(groups) - 1; i >= 0; i-- {
-		allMiddlewares = append(allMiddlewares, groups[i].GetAfterMiddlewares())
+		afterMiddlewares = append(afterMiddlewares, groups[i].GetAfterMiddlewares()...)
 	}
 
-	// 7. Add domain after middlewares
+	// 1.3 Add domain after middlewares
 	if domain != nil {
-		allMiddlewares = append(allMiddlewares, domain.GetAfterMiddlewares())
+		afterMiddlewares = append(afterMiddlewares, domain.GetAfterMiddlewares()...)
 	}
 
-	// 8. Add global after middlewares (outermost)
-	allMiddlewares = append(allMiddlewares, r.GetAfterMiddlewares())
+	// 1.4 Add global after middlewares (outermost)
+	afterMiddlewares = append(afterMiddlewares, r.GetAfterMiddlewares()...)
 
-	// Apply all middlewares in the correct order using BuildMiddlewareChainFromSlices
-	// This will ensure that middlewares are applied in the correct order:
-	// 1. Global before (outermost) -> ... -> Route before -> Handler -> Route after -> ... -> Global after (outermost)
-	handler = BuildMiddlewareChainFromSlices(handler, allMiddlewares...)
+	// 2. Now collect all before middlewares in the order they should be applied (outermost first)
+	var beforeMiddlewares []MiddlewareInterface
+
+	// 2.1 Add global before middlewares (outermost)
+	beforeMiddlewares = append(beforeMiddlewares, r.GetBeforeMiddlewares()...)
+
+	// 2.2 Add domain before middlewares
+	if domain != nil {
+		beforeMiddlewares = append(beforeMiddlewares, domain.GetBeforeMiddlewares()...)
+	}
+
+	// 2.3 Add group before middlewares (from outermost to innermost)
+	for _, group := range groups {
+		beforeMiddlewares = append(beforeMiddlewares, group.GetBeforeMiddlewares()...)
+	}
+
+	// 2.4 Add route before middlewares (innermost)
+	beforeMiddlewares = append(beforeMiddlewares, route.GetBeforeMiddlewares()...)
+
+	// 3. First, wrap the handler with after middlewares (in reverse order)
+	for i := len(afterMiddlewares) - 1; i >= 0; i-- {
+		handler = afterMiddlewares[i].Execute(handler)
+	}
+
+	// 4. Then wrap with before middlewares (in reverse order)
+	for i := len(beforeMiddlewares) - 1; i >= 0; i-- {
+		handler = beforeMiddlewares[i].Execute(handler)
+	}
 
 	return handler
 }

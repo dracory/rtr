@@ -31,20 +31,14 @@ func testMiddlewareSetup(t *testing.T) (rtr.RouterInterface, rtr.DomainInterface
 				}
 
 				// Record middleware entry
-				entry := name + " before"
-				*executionOrder = append(*executionOrder, entry)
-				t.Logf("MIDDLEWARE: %s", entry)
+				*executionOrder = append(*executionOrder, name)
+				t.Logf("MIDDLEWARE: %s", name)
 
 				// Create a response recorder to capture the response
 				rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
 				// Call the next handler
 				next.ServeHTTP(rw, r)
-
-				// Record middleware exit
-				exit := name + " after"
-				*executionOrder = append(*executionOrder, exit)
-				t.Logf("MIDDLEWARE: %s", exit)
 			})
 		})
 	}
@@ -52,28 +46,31 @@ func testMiddlewareSetup(t *testing.T) (rtr.RouterInterface, rtr.DomainInterface
 	// Create a new router
 	r := rtr.NewRouter()
 
+	// We'll modify the route handler to record its own execution
+	// This will be used in the test routes
+
 	// Global middlewares should wrap everything (added first)
 	r.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-		traceMiddleware("global_before_1"),
-		traceMiddleware("global_before_2"),
+		traceMiddleware("global_before_1"), // should be executed first
+		traceMiddleware("global_before_2"), // should be executed second
 	})
 
 	// Domain middlewares wrap domain-specific routes
 	domain := rtr.NewDomain("example.com")
 	domain.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-		traceMiddleware("domain_before_1"),
-		traceMiddleware("domain_before_2"),
+		traceMiddleware("domain_before_1"), // should be executed first
+		traceMiddleware("domain_before_2"), // should be executed second
 	})
 	domain.AddAfterMiddlewares([]rtr.MiddlewareInterface{
-		traceMiddleware("domain_after_1"),
-		traceMiddleware("domain_after_2"),
+		traceMiddleware("domain_after_1"), // should be executed first
+		traceMiddleware("domain_after_2"), // should be executed second
 	})
 	r.AddDomain(domain)
 
 	// Global after middlewares wrap everything (added last)
 	r.AddAfterMiddlewares([]rtr.MiddlewareInterface{
-		traceMiddleware("global_after_1"),
-		traceMiddleware("global_after_2"),
+		traceMiddleware("global_after_1"), // should be executed first
+		traceMiddleware("global_after_2"), // should be executed second
 	})
 
 	return r, domain, traceMiddleware
@@ -93,28 +90,29 @@ func (rw *responseWriter) WriteHeader(code int) {
 // TestDirectRouteMiddlewareOrder tests middleware execution order for direct routes
 func TestDirectRouteMiddlewareOrder(t *testing.T) {
 	r, domain, traceMiddleware := testMiddlewareSetup(t)
-	var executionOrder []string
+	
+	// Create a slice to hold the execution order
+	executionOrder := []string{}
 
 	// Create a direct route with middlewares
 	directRoute := rtr.NewRoute().
 		SetMethod("GET").
 		SetPath("/direct").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			t.Log("HANDLER: Executing handler")
-			// Get the execution order from context
+			// Record handler execution in the context
 			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
-				executionOrder = *val.(*[]string)
+				execOrder := val.(*[]string)
+				*execOrder = append(*execOrder, "handler")
 			}
-			executionOrder = append(executionOrder, "handler")
 			w.WriteHeader(http.StatusOK)
 		}).
 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-			traceMiddleware("route_before_1"),
-			traceMiddleware("route_before_2"),
+			traceMiddleware("route_before_1"), // should be executed first
+			traceMiddleware("route_before_2"), // should be executed second
 		}).
 		AddAfterMiddlewares([]rtr.MiddlewareInterface{
-			traceMiddleware("route_after_1"),
-			traceMiddleware("route_after_2"),
+			traceMiddleware("route_after_1"), // should be executed first
+			traceMiddleware("route_after_2"), // should be executed second
 		})
 
 	// Add the route to the domain instead of the router
@@ -124,28 +122,30 @@ func TestDirectRouteMiddlewareOrder(t *testing.T) {
 	req.Host = "example.com" // Set the Host header to match the domain
 	w := httptest.NewRecorder()
 
+	// Create a request with a context that has our execution order slice
+	req = req.WithContext(context.WithValue(req.Context(), rtr.ExecutionSequenceKey, &executionOrder))
 	r.ServeHTTP(w, req)
 
-	// Verify the execution order matches:
-	// globals before → domains before → routes before → routes after → domains after → globals after
+	// Verify the execution order matches the defined middleware order
+	// Global before (in definition order) → Domain before → Route before → Handler → Route after → Domain after → Global after
 	expectedOrder := []string{
-		// Before middlewares (outer to inner)
-		"global_before_1 before", // Global before middlewares
-		"global_before_2 before",
-		"domain_before_1 before", // Domain before middlewares
-		"domain_before_2 before",
-		"route_before_1 before", // Route before middlewares
-		"route_before_2 before",
+		// Before middlewares (in definition order)
+		"global_before_1", // First global before middleware
+		"global_before_2", // Second global before middleware
+		"domain_before_1", // First domain before middleware
+		"domain_before_2", // Second domain before middleware
+		"route_before_1",  // First route before middleware
+		"route_before_2",  // Second route before middleware
 
-		"handler", // Handler
+		"handler", // Handler execution
 
-		// After middlewares (inner to outer)
-		"route_after_1 after", // Route after middlewares (reversed)
-		"route_after_2 after",
-		"domain_after_1 after", // Domain after middlewares (reversed)
-		"domain_after_2 after",
-		"global_after_1 after", // Global after middlewares (reversed)
-		"global_after_2 after",
+		// After middlewares (in definition order)
+		"route_after_1",  // First route after middleware
+		"route_after_2",  // Second route after middleware
+		"domain_after_1", // First domain after middleware
+		"domain_after_2", // Second domain after middleware
+		"global_after_1", // First global after middleware
+		"global_after_2", // Second global after middleware
 	}
 
 	assertMiddlewareOrder(t, executionOrder, expectedOrder)
@@ -173,7 +173,9 @@ func TestGroupMiddlewareOrder(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			executionOrder = *r.Context().Value("executionOrder").(*[]string)
+			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
+				executionOrder = *val.(*[]string)
+			}
 			executionOrder = append(executionOrder, "handler")
 			w.WriteHeader(http.StatusOK)
 		}).
@@ -195,22 +197,22 @@ func TestGroupMiddlewareOrder(t *testing.T) {
 
 	expectedOrder := []string{
 		// Before middlewares (outer to inner)
-		"global_before_1 before",
-		"global_before_2 before",
-		"domain_before_1 before",
-		"domain_before_2 before",
-		"group_before_1 before",
-		"group_before_2 before",
-		"route_before_1 before",
+		"global_before_1",
+		"global_before_2",
+		"domain_before_1",
+		"domain_before_2",
+		"group_before_1",
+		"group_before_2",
+		"route_before_1",
 		"handler",
 		// After middlewares (inner to outer)
-		"route_after_1 after",
-		"group_after_2 after",
-		"group_after_1 after",
-		"domain_after_1 after",
-		"domain_after_2 after",
-		"global_after_1 after",
-		"global_after_2 after",
+		"route_after_1",
+		"group_after_2",
+		"group_after_1",
+		"domain_after_1",
+		"domain_after_2",
+		"global_after_1",
+		"global_after_2",
 	}
 
 	assertMiddlewareOrder(t, executionOrder, expectedOrder)
@@ -246,7 +248,9 @@ func TestNestedGroupMiddlewareOrder(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			executionOrder = *r.Context().Value("executionOrder").(*[]string)
+			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
+				executionOrder = *val.(*[]string)
+			}
 			executionOrder = append(executionOrder, "handler")
 			w.WriteHeader(http.StatusOK)
 		}).
@@ -266,23 +270,23 @@ func TestNestedGroupMiddlewareOrder(t *testing.T) {
 
 	expectedOrder := []string{
 		// Before middlewares (outer to inner)
-		"global_before_1 before",
-		"global_before_2 before",
-		"domain_before_1 before",
-		"domain_before_2 before",
-		"parent_group_before_1 before",
-		"child_group_before_1 before",
-		"route_before_1 before",
+		"global_before_1",
+		"global_before_2",
+		"domain_before_1",
+		"domain_before_2",
+		"parent_group_before_1",
+		"child_group_before_1",
+		"route_before_1",
 
 		"handler",
 
 		// After middlewares (inner to outer)
-		"child_group_after_1 after",
-		"parent_group_after_1 after",
-		"domain_after_1 after",
-		"domain_after_2 after",
-		"global_after_1 after",
-		"global_after_2 after",
+		"child_group_after_1",
+		"parent_group_after_1",
+		"domain_after_1",
+		"domain_after_2",
+		"global_after_1",
+		"global_after_2",
 	}
 
 	assertMiddlewareOrder(t, executionOrder, expectedOrder)

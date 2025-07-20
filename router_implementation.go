@@ -129,32 +129,27 @@ func (r *routerImpl) GetAfterMiddlewares() []MiddlewareInterface {
 }
 
 func (r *routerImpl) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// Create a handler chain by wrapping the final handler with middlewares
-	var matchedHandler http.Handler
+	// Find a matching route
+	route, handler := r.findMatchingRoute(req)
 
-	// First, check if the request matches any domain
-	if domain := r.findMatchingDomain(req.Host); domain != nil {
-		// Try to find a matching route within the domain
-		if _, handler := r.findMatchingRouteInDomain(domain, req); handler != nil {
-			matchedHandler = handler
+	// If no route found, check domains
+	if route == nil {
+		for _, domain := range r.domains {
+			route, handler = r.findMatchingRouteInDomain(domain, req)
+			if route != nil {
+				break
+			}
 		}
 	}
 
-	// If no domain matched or no route in domain matched, check global routes
-	if matchedHandler == nil {
-		if _, handler := r.findMatchingRoute(req); handler != nil {
-			matchedHandler = handler
-		}
-	}
-
-	// If still no handler matched, return 404
-	if matchedHandler == nil {
+	// If still no route found, return 404
+	if route == nil {
 		http.NotFound(w, req)
 		return
 	}
 
-	// Execute the handler chain
-	matchedHandler.ServeHTTP(w, req)
+	// Serve the request
+	handler.ServeHTTP(w, req)
 }
 
 // matchParameterizedRoute checks if a parameterized route matches the request path and extracts parameters
