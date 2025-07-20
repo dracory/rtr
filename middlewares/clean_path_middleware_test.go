@@ -123,6 +123,44 @@ func TestCleanPath_Redirect(t *testing.T) {
 	}
 }
 
+func TestCleanPath_NilSafety(t *testing.T) {
+	t.Run("nil handler", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/test", nil)
+		rec := httptest.NewRecorder()
+
+		// Test with nil handler
+		handler := middlewares.CleanPathMiddleware().GetHandler()(nil)
+		handler.ServeHTTP(rec, req)
+
+		// Should not panic, but may not do anything useful
+		if status := rec.Code; status != http.StatusOK {
+			t.Errorf("unexpected status code: got %v want %v", status, http.StatusOK)
+		}
+	})
+
+	t.Run("nil request", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+
+		// Test with nil request
+		handler := middlewares.CleanPathMiddleware().GetHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			t.Error("handler should not be called with nil request")
+		}))
+
+		handler.ServeHTTP(rec, nil)
+	})
+
+	t.Run("nil URL", func(t *testing.T) {
+		req := &http.Request{} // No URL set
+		rec := httptest.NewRecorder()
+
+		handler := middlewares.CleanPathMiddleware().GetHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			t.Error("handler should not be called with nil URL")
+		}))
+
+		handler.ServeHTTP(rec, req)
+	})
+}
+
 func TestCleanPath_URLEncoded(t *testing.T) {
 	tests := []struct {
 		name        string

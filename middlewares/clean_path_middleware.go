@@ -25,6 +25,14 @@ func CleanPathMiddleware() rtr.MiddlewareInterface {
 func cleanPathHandler() rtr.StdMiddleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check for nil request or URL
+			if r == nil || r.URL == nil {
+				if next != nil {
+					next.ServeHTTP(w, r)
+				}
+				return
+			}
+
 			// Get the path to clean, prefer RawPath if available (for URL-encoded paths)
 			pathToClean := r.URL.Path
 			if r.URL.RawPath != "" {
@@ -62,7 +70,10 @@ func cleanPathHandler() rtr.StdMiddleware {
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			// Call next handler if it exists
+			if next != nil {
+				next.ServeHTTP(w, r)
+			}
 		})
 	}
 }
