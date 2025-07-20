@@ -7,8 +7,39 @@ import (
 	"github.com/dracory/rtr"
 )
 
-// GetHead creates a middleware that automatically routes undefined HEAD requests to GET handlers.
-// This is useful for automatically handling HEAD requests without requiring explicit HEAD handlers.
+// GetHead creates a middleware that automatically routes undefined HEAD requests to
+// GET handlers. This is useful for automatically handling HEAD requests without
+// requiring explicit HEAD handlers.
+//
+// By using this middleware, you are in compliance with the HTTP/1.1 spec (RFC
+// 2616), which states that servers MUST support the HEAD method for any URI that
+// returns a response body for a GET request.
+//
+// Additionally, this middleware provides a performance benefit by saving clients
+// the overhead of downloading the full response body when they only need
+// metadata.
+//
+// This is a common web practice, and many web frameworks and servers (like
+// Express.js, Django, etc.) provide this functionality out of the box. It also
+// saves developers from having to implement HEAD handlers separately for every
+// route.
+//
+// Usage:
+//
+//	router := rtr.NewRouter()
+//	router.AddRoute(rtr.NewRoute().
+//	  SetMethod("GET").
+//	  SetPath("/test").
+//	  SetHandler(func(w http.ResponseWriter, r *http.Request) {
+//	    w.WriteHeader(http.StatusOK)
+//	  }).
+//	  AddMiddleware(middlewares.GetHead()))
+//
+// Parameters:
+//   - next: The next handler in the middleware chain.
+//
+// Returns:
+//   - A middleware that automatically routes undefined HEAD requests to GET handlers.
 func GetHead() rtr.MiddlewareInterface {
 	return rtr.NewMiddleware().
 		SetName("GET-HEAD Middleware").
