@@ -1,5 +1,10 @@
 package rtr
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // Status constants for declarative configuration
 const (
 	StatusEnabled  = "enabled"
@@ -46,11 +51,11 @@ var _ ItemInterface = (*Route)(nil)
 
 // Domain represents a domain-specific routing configuration
 type Domain struct {
-	Status      string
-	Hosts       []string
-	Items       []ItemInterface // Can contain both Groups and Routes in sequence
-	Middlewares []string
-	Name        string
+	Status      string        `json:"status,omitempty"`
+	Hosts       []string      `json:"hosts,omitempty"`
+	Items       []ItemInterface `json:"items,omitempty"` // Can contain both Groups and Routes in sequence
+	Middlewares []string      `json:"middlewares,omitempty"`
+	Name        string        `json:"name,omitempty"`
 }
 
 // GetName implements ItemInterface
@@ -68,13 +73,71 @@ func (d Domain) GetMiddlewares() []string {
 	return d.Middlewares
 }
 
+// MarshalJSON implements the json.Marshaler interface for Domain
+func (d Domain) MarshalJSON() ([]byte, error) {
+	// Create an alias to avoid infinite recursion
+	type Alias Domain
+	return json.Marshal(&struct {
+		Type string `json:"type"`
+		*Alias
+	}{
+		Type: TypeDomain,
+		Alias: (*Alias)(&d),
+	})
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Domain
+func (d *Domain) UnmarshalJSON(data []byte) error {
+	type Alias Domain
+	aux := &struct {
+		*Alias
+		Items []json.RawMessage `json:"items,omitempty"`
+	}{
+		Alias: (*Alias)(d),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Process Items
+	for _, itemData := range aux.Items {
+		// First unmarshal just the type field to determine the concrete type
+		var typeOnly struct {
+			Type string `json:"type"`
+		}
+		if err := json.Unmarshal(itemData, &typeOnly); err != nil {
+			return err
+		}
+
+		switch typeOnly.Type {
+		case TypeRoute:
+			var route Route
+			if err := json.Unmarshal(itemData, &route); err != nil {
+				return err
+			}
+			d.Items = append(d.Items, route)
+		case TypeGroup:
+			var group Group
+			if err := json.Unmarshal(itemData, &group); err != nil {
+				return err
+			}
+			d.Items = append(d.Items, group)
+		default:
+			return fmt.Errorf("unknown item type: %s", typeOnly.Type)
+		}
+	}
+
+	return nil
+}
+
 // Group represents a group of routes
 type Group struct {
-	Status      string
-	Prefix      string
-	Routes      []Route
-	Middlewares []string
-	Name        string
+	Status      string   `json:"status,omitempty"`
+	Prefix      string   `json:"prefix,omitempty"`
+	Routes      []Route  `json:"routes,omitempty"`
+	Middlewares []string `json:"middlewares,omitempty"`
+	Name        string   `json:"name,omitempty"`
 }
 
 // GetName implements ItemInterface
@@ -92,21 +155,46 @@ func (g Group) GetMiddlewares() []string {
 	return g.Middlewares
 }
 
+// MarshalJSON implements the json.Marshaler interface for Group
+func (g Group) MarshalJSON() ([]byte, error) {
+	// Create an alias to avoid infinite recursion
+	type Alias Group
+	return json.Marshal(&struct {
+		Type string `json:"type"`
+		*Alias
+	}{
+		Type:  TypeGroup,
+		Alias: (*Alias)(&g),
+	})
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Group
+func (g *Group) UnmarshalJSON(data []byte) error {
+	type Alias Group
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(g),
+	}
+
+	return json.Unmarshal(data, &aux)
+}
+
 // Route represents a single route configuration
 type Route struct {
-	Status      string
-	Path        string
-	Method      string
-	Handler      string // Standard HTTP handler reference
-	HTMLHandler  string // HTML handler reference
-	JSONHandler  string // JSON handler reference
-	CSSHandler   string // CSS handler reference
-	XMLHandler   string // XML handler reference
-	TextHandler  string // Text handler reference
-	JSHandler    string // JavaScript handler reference
-	ErrorHandler string // Error handler reference
-	Name        string
-	Middlewares []string
+	Status       string   `json:"status,omitempty"`
+	Path         string   `json:"path,omitempty"`
+	Method       string   `json:"method,omitempty"`
+	Handler      string   `json:"handler,omitempty"`      // Standard HTTP handler reference
+	HTMLHandler  string   `json:"htmlHandler,omitempty"`  // HTML handler reference
+	JSONHandler  string   `json:"jsonHandler,omitempty"`  // JSON handler reference
+	CSSHandler   string   `json:"cssHandler,omitempty"`   // CSS handler reference
+	XMLHandler   string   `json:"xmlHandler,omitempty"`   // XML handler reference
+	TextHandler  string   `json:"textHandler,omitempty"`  // Text handler reference
+	JSHandler    string   `json:"jsHandler,omitempty"`    // JavaScript handler reference
+	ErrorHandler string   `json:"errorHandler,omitempty"` // Error handler reference
+	Name         string   `json:"name,omitempty"`
+	Middlewares  []string `json:"middlewares,omitempty"`
 }
 
 // GetName implements ItemInterface
@@ -122,6 +210,31 @@ func (r Route) GetStatus() string {
 // GetMiddlewares implements ItemInterface
 func (r Route) GetMiddlewares() []string {
 	return r.Middlewares
+}
+
+// MarshalJSON implements the json.Marshaler interface for Route
+func (r Route) MarshalJSON() ([]byte, error) {
+	// Create an alias to avoid infinite recursion
+	type Alias Route
+	return json.Marshal(&struct {
+		Type string `json:"type"`
+		*Alias
+	}{
+		Type:  TypeRoute,
+		Alias: (*Alias)(&r),
+	})
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for Route
+func (r *Route) UnmarshalJSON(data []byte) error {
+	type Alias Route
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	return json.Unmarshal(data, &aux)
 }
 
 // Middleware represents middleware configuration

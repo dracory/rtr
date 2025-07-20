@@ -77,12 +77,12 @@ func TestNamedMiddlewareEndpoints(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.path, nil)
-			
+
 			// Add headers if specified
 			for key, value := range tt.headers {
 				req.Header.Set(key, value)
 			}
-			
+
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
@@ -101,21 +101,27 @@ func TestNamedMiddlewareEndpoints(t *testing.T) {
 func TestNamedMiddlewareExecution(t *testing.T) {
 	// Test that named middleware executes in the correct order
 	var executionOrder []string
-	
+
 	// Create middleware that records execution order
-	middleware1 := rtr.NewMiddleware("First Middleware", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			executionOrder = append(executionOrder, "First")
-			next.ServeHTTP(w, r)
-		})
-	})
-	
-	middleware2 := rtr.NewMiddleware("Second Middleware", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			executionOrder = append(executionOrder, "Second")
-			next.ServeHTTP(w, r)
-		})
-	})
+	middleware1 := rtr.NewMiddleware(
+		rtr.WithName("First Middleware"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				executionOrder = append(executionOrder, "First")
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
+
+	middleware2 := rtr.NewMiddleware(
+		rtr.WithName("Second Middleware"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				executionOrder = append(executionOrder, "Second")
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
 	// Create a simple route with named middleware
 	route := rtr.NewRoute().
@@ -149,37 +155,51 @@ func TestNamedMiddlewareExecution(t *testing.T) {
 
 func setupTestRouter() rtr.RouterInterface {
 	// Create named middleware
-	authMiddleware := rtr.NewMiddleware("User Authentication", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token := r.Header.Get("Authorization")
-			if token == "" {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
+	authMiddleware := rtr.NewMiddleware(
+		rtr.WithName("User Authentication"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				token := r.Header.Get("Authorization")
+				if token == "" {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
-	authzMiddleware := rtr.NewMiddleware("Admin Authorization", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Simple authorization check (in real app, check user roles)
-			next.ServeHTTP(w, r)
-		})
-	})
+	authzMiddleware := rtr.NewMiddleware(
+		rtr.WithName("Admin Authorization"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Simple authorization check (in real app, check user roles)
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
-	loggingMiddleware := rtr.NewMiddleware("Request Logging", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// In a real app, this would log to a proper logger
-			next.ServeHTTP(w, r)
-		})
-	})
+	// Create named middleware
+	loggingMiddleware := rtr.NewMiddleware(
+		rtr.WithName("Request Logging"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// In a real app, this would log to a proper logger
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
-	rateLimitMiddleware := rtr.NewMiddleware("Rate Limiting", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Simple rate limiting simulation
-			next.ServeHTTP(w, r)
-		})
-	})
+	// Create named middleware
+	rateLimitMiddleware := rtr.NewMiddleware(
+		rtr.WithName("Rate Limiting"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Simple rate limiting simulation
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
 	// Create router
 	router := rtr.NewRouter()

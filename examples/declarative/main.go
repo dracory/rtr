@@ -13,25 +13,25 @@ func main() {
 	// Example: Pure Declarative Configuration
 	fmt.Println("=== Declarative Routing System Example ===")
 	domain := CreateDeclarativeConfiguration()
-	
+
 	// Display the configuration
 	fmt.Printf("Domain: %s\n", domain.Name)
 	fmt.Printf("Status: %s\n", domain.Status)
 	fmt.Printf("Hosts: %v\n", domain.Hosts)
 	fmt.Printf("Items: %d\n", len(domain.Items))
 	fmt.Printf("Middlewares: %v\n", domain.Middlewares)
-	
+
 	// Create a HandlerRegistry and register handlers
 	registry := rtr.NewHandlerRegistry()
 	registerHandlers(registry)
 	registerMiddleware(registry)
-	
+
 	fmt.Println("\n=== Configuration Structure ===")
 	printDomainStructure(domain)
-	
+
 	fmt.Println("\n=== JSON Serialization Example ===")
 	showJSONSerialization(domain)
-	
+
 	fmt.Println("\n=== HandlerRegistry Example ===")
 	showHandlerRegistryExample(registry)
 
@@ -42,9 +42,9 @@ func main() {
 // CreateDeclarativeConfiguration demonstrates pure declarative configuration
 func CreateDeclarativeConfiguration() *rtr.Domain {
 	return &rtr.Domain{
-		Name:   "Example API",
-		Status: rtr.StatusEnabled,
-		Hosts:  []string{"api.example.com", "*.api.example.com"},
+		Name:        "Example API",
+		Status:      rtr.StatusEnabled,
+		Hosts:       []string{"api.example.com", "*.api.example.com"},
 		Middlewares: []string{"cors", "logging"},
 		Items: []rtr.ItemInterface{
 			// Home route
@@ -57,9 +57,9 @@ func CreateDeclarativeConfiguration() *rtr.Domain {
 			},
 			// API Group
 			&rtr.Group{
-				Name:   "API v1",
-				Status: rtr.StatusEnabled,
-				Prefix: "/api/v1",
+				Name:        "API v1",
+				Status:      rtr.StatusEnabled,
+				Prefix:      "/api/v1",
 				Middlewares: []string{"auth", "rate-limit"},
 				Routes: []rtr.Route{
 					{
@@ -70,11 +70,11 @@ func CreateDeclarativeConfiguration() *rtr.Domain {
 						Handler: "users-list",
 					},
 					{
-						Name:    "Create User",
-						Status:  rtr.StatusEnabled,
-						Method:  rtr.MethodPOST,
-						Path:    "/users",
-						Handler: "users-create",
+						Name:        "Create User",
+						Status:      rtr.StatusEnabled,
+						Method:      rtr.MethodPOST,
+						Path:        "/users",
+						Handler:     "users-create",
 						Middlewares: []string{"validate-user"},
 					},
 					{
@@ -88,11 +88,11 @@ func CreateDeclarativeConfiguration() *rtr.Domain {
 			},
 			// Admin routes (disabled for maintenance)
 			&rtr.Route{
-				Name:    "Admin Dashboard",
-				Status:  rtr.StatusDisabled,
-				Method:  rtr.MethodGET,
-				Path:    "/admin",
-				Handler: "admin-dashboard",
+				Name:        "Admin Dashboard",
+				Status:      rtr.StatusDisabled,
+				Method:      rtr.MethodGET,
+				Path:        "/admin",
+				Handler:     "admin-dashboard",
 				Middlewares: []string{"admin-auth"},
 			},
 		},
@@ -143,7 +143,7 @@ func registerHandlers(registry *rtr.HandlerRegistry) {
 				json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
 				return
 			}
-			
+
 			response := map[string]interface{}{
 				"message": "User created successfully",
 				"id":      42,
@@ -192,77 +192,94 @@ func registerHandlers(registry *rtr.HandlerRegistry) {
 // registerMiddleware registers all middleware with the registry
 func registerMiddleware(registry *rtr.HandlerRegistry) {
 	// CORS middleware
-	corsMiddleware := rtr.NewMiddleware("cors", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			next.ServeHTTP(w, r)
-		})
-	})
+	corsMiddleware := rtr.NewMiddleware(
+		rtr.WithName("cors"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+				next.ServeHTTP(w, r)
+			})
+		}))
 	registry.AddMiddleware(corsMiddleware)
 
 	// Logging middleware
-	loggingMiddleware := rtr.NewMiddleware("logging", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			fmt.Printf("[%s] %s %s\n", start.Format(time.RFC3339), r.Method, r.URL.Path)
-			next.ServeHTTP(w, r)
-			fmt.Printf("[%s] Completed in %v\n", time.Now().Format(time.RFC3339), time.Since(start))
-		})
-	})
+	loggingMiddleware := rtr.NewMiddleware(
+		rtr.WithName("logging"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				start := time.Now()
+				fmt.Printf("[%s] %s %s\n", start.Format(time.RFC3339), r.Method, r.URL.Path)
+				next.ServeHTTP(w, r)
+				fmt.Printf("[%s] Completed in %v\n", time.Now().Format(time.RFC3339), time.Since(start))
+			})
+		}),
+	)
 	registry.AddMiddleware(loggingMiddleware)
 
 	// Auth middleware
-	authMiddleware := rtr.NewMiddleware("auth", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			auth := r.Header.Get("Authorization")
-			if auth == "" {
-				w.WriteHeader(http.StatusUnauthorized)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Authorization required"})
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
+	authMiddleware := rtr.NewMiddleware(
+		rtr.WithName("auth"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				auth := r.Header.Get("Authorization")
+				if auth == "" {
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Authorization required"})
+					return
+				}
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 	registry.AddMiddleware(authMiddleware)
 
 	// Rate limiting middleware
-	rateLimitMiddleware := rtr.NewMiddleware("rate-limit", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Simple rate limiting simulation
-			w.Header().Set("X-RateLimit-Limit", "100")
-			w.Header().Set("X-RateLimit-Remaining", "99")
-			next.ServeHTTP(w, r)
-		})
-	})
+	rateLimitMiddleware := rtr.NewMiddleware(
+		rtr.WithName("rate-limit"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Simple rate limiting simulation
+				w.Header().Set("X-RateLimit-Limit", "100")
+				w.Header().Set("X-RateLimit-Remaining", "99")
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 	registry.AddMiddleware(rateLimitMiddleware)
 
 	// User validation middleware
-	validateUserMiddleware := rtr.NewMiddleware("validate-user", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("Content-Type") != "application/json" {
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Content-Type must be application/json"})
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
+	validateUserMiddleware := rtr.NewMiddleware(
+		rtr.WithName("validate-user"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Content-Type") != "application/json" {
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Content-Type must be application/json"})
+					return
+				}
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 	registry.AddMiddleware(validateUserMiddleware)
 
 	// Admin auth middleware
-	adminAuthMiddleware := rtr.NewMiddleware("admin-auth", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			adminToken := r.Header.Get("X-Admin-Token")
-			if adminToken != "admin-secret-token" {
-				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Admin access required"})
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
+	adminAuthMiddleware := rtr.NewMiddleware(
+		rtr.WithName("admin-auth"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				adminToken := r.Header.Get("X-Admin-Token")
+				if adminToken != "admin-secret-token" {
+					w.WriteHeader(http.StatusForbidden)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Admin access required"})
+					return
+				}
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 	registry.AddMiddleware(adminAuthMiddleware)
 }
 
@@ -272,7 +289,7 @@ func printDomainStructure(domain *rtr.Domain) {
 	fmt.Printf("  Hosts: %v\n", domain.Hosts)
 	fmt.Printf("  Middlewares: %v\n", domain.Middlewares)
 	fmt.Printf("  Items: %d\n", len(domain.Items))
-	
+
 	for i, item := range domain.Items {
 		switch v := item.(type) {
 		case *rtr.Route:
@@ -309,7 +326,7 @@ func showJSONSerialization(domain *rtr.Domain) {
 // showHandlerRegistryExample demonstrates the HandlerRegistry functionality
 func showHandlerRegistryExample(registry *rtr.HandlerRegistry) {
 	fmt.Println("Handler Registry Contents:")
-	
+
 	// Try to find registered handlers
 	handlerNames := []string{"home", "users-list", "users-create", "users-get", "admin-dashboard"}
 	for _, name := range handlerNames {
@@ -320,7 +337,7 @@ func showHandlerRegistryExample(registry *rtr.HandlerRegistry) {
 			fmt.Printf("  ✗ Route '%s': not found\n", name)
 		}
 	}
-	
+
 	// Try to find registered middleware
 	middlewareNames := []string{"cors", "logging", "auth", "rate-limit", "validate-user", "admin-auth"}
 	for _, name := range middlewareNames {
@@ -339,21 +356,21 @@ func showRuntimeRouterCreation(domain *rtr.Domain, registry *rtr.HandlerRegistry
 	fmt.Printf("1. Domain configuration loaded: %s\n", domain.Name)
 	fmt.Printf("2. Handler registry populated with %d routes and middleware\n", len(domain.Items))
 	fmt.Println("3. Building runtime router...")
-	
+
 	// In a real implementation, you would:
 	// - Create a new router instance
 	// - Iterate through domain.Items
 	// - For each route, find the handler in the registry and add it to the router
 	// - For each group, create a group and add its routes
 	// - Apply middleware based on the middleware names
-	
+
 	fmt.Println("\nSteps to build runtime router:")
 	fmt.Println("  a) Create new router instance")
 	fmt.Println("  b) Apply domain-level middleware:")
 	for _, mw := range domain.Middlewares {
 		fmt.Printf("     - Apply middleware: %s\n", mw)
 	}
-	
+
 	fmt.Println("  c) Process domain items:")
 	for i, item := range domain.Items {
 		switch v := item.(type) {
@@ -387,7 +404,7 @@ func showRuntimeRouterCreation(domain *rtr.Domain, registry *rtr.HandlerRegistry
 			}
 		}
 	}
-	
+
 	fmt.Println("  d) Router ready for HTTP server")
 	fmt.Println("\nNote: This is a demonstration. In a real implementation,")
 	fmt.Println("you would use the registry to resolve handler names to actual functions.")

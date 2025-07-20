@@ -9,42 +9,51 @@ import (
 
 func main() {
 	// Create named middleware similar to the old gouniverse/router pattern
-	authMiddleware := rtr.NewMiddleware("User Authentication", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check for authentication token
-			token := r.Header.Get("Authorization")
-			if token == "" {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
+	authMiddleware := rtr.NewMiddleware(
+		rtr.WithName("User Authentication"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// Check for authentication token
+				token := r.Header.Get("Authorization")
+				if token == "" {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
 
-			fmt.Printf("Auth middleware '%s' executed for %s\n", "User Authentication", r.URL.Path)
-			next.ServeHTTP(w, r)
-		})
-	})
+				fmt.Printf("Auth middleware '%s' executed for %s\n", "User Authentication", r.URL.Path)
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
-	loggingMiddleware := rtr.NewMiddleware("Request Logger", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Printf("Logging middleware '%s' - %s %s\n", "Request Logger", r.Method, r.URL.Path)
-			next.ServeHTTP(w, r)
-		})
-	})
+	loggingMiddleware := rtr.NewMiddleware(
+		rtr.WithName("Request Logger"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Printf("Logging middleware '%s' - %s %s\n", "Request Logger", r.Method, r.URL.Path)
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
-	corsMiddleware := rtr.NewMiddleware("CORS Handler", func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	corsMiddleware := rtr.NewMiddleware(
+		rtr.WithName("CORS Handler"),
+		rtr.WithHandler(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
+				if r.Method == "OPTIONS" {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 
-			fmt.Printf("CORS middleware '%s' executed\n", "CORS Handler")
-			next.ServeHTTP(w, r)
-		})
-	})
+				fmt.Printf("CORS middleware '%s' executed\n", "CORS Handler")
+				next.ServeHTTP(w, r)
+			})
+		}),
+	)
 
 	// Create router with global named middleware
 	router := rtr.NewRouter()
@@ -84,18 +93,21 @@ func main() {
 		SetName("Admin API Endpoint").
 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
 			authMiddleware,
-			rtr.NewMiddleware("Admin Check", func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					// Check if user is admin
-					role := r.Header.Get("X-User-Role")
-					if role != "admin" {
-						http.Error(w, "Forbidden: Admin access required", http.StatusForbidden)
-						return
-					}
-					fmt.Printf("Admin middleware executed for %s\n", r.URL.Path)
-					next.ServeHTTP(w, r)
-				})
-			}),
+			rtr.NewMiddleware(
+				rtr.WithName("Admin Check"),
+				rtr.WithHandler(func(next http.Handler) http.Handler {
+					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						// Check if user is admin
+						role := r.Header.Get("X-User-Role")
+						if role != "admin" {
+							http.Error(w, "Forbidden: Admin access required", http.StatusForbidden)
+							return
+						}
+						fmt.Printf("Admin middleware executed for %s\n", r.URL.Path)
+						next.ServeHTTP(w, r)
+					})
+				}),
+			),
 		}).
 		SetJSONHandler(func(w http.ResponseWriter, r *http.Request) string {
 			return `{"message": "Admin endpoint accessed successfully"}`
@@ -112,12 +124,15 @@ func main() {
 		SetMethod("GET").
 		SetPath("/api/config").
 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-			rtr.NewMiddleware("Config Validator", func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					fmt.Printf("Config validation middleware executed\n")
-					next.ServeHTTP(w, r)
-				})
-			}),
+			rtr.NewMiddleware(
+				rtr.WithName("Config Validator"),
+				rtr.WithHandler(func(next http.Handler) http.Handler {
+					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						fmt.Printf("Config validation middleware executed\n")
+						next.ServeHTTP(w, r)
+					})
+				}),
+			),
 		}).
 		SetJSONHandler(func(w http.ResponseWriter, r *http.Request) string {
 			return `{"status":"ok","message":"Config loaded"}`
@@ -129,13 +144,16 @@ func main() {
 	apiGroup := rtr.NewGroup().
 		SetPrefix("/v1").
 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-			rtr.NewMiddleware("API Version Check", func(next http.Handler) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.Header().Set("X-API-Version", "v1")
-					fmt.Printf("API version middleware executed\n")
-					next.ServeHTTP(w, r)
-				})
-			}),
+			rtr.NewMiddleware(
+				rtr.WithName("API Version Check"),
+				rtr.WithHandler(func(next http.Handler) http.Handler {
+					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("X-API-Version", "v1")
+						fmt.Printf("API version middleware executed\n")
+						next.ServeHTTP(w, r)
+					})
+				}),
+			),
 		})
 
 	// Add routes to the group

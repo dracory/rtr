@@ -3,25 +3,45 @@ package rtr
 import "net/http"
 
 // ===========================================================================
-// = CONSTTRUCTORS
+// = CONSTRUCTOR OPTIONS
 // ===========================================================================
 
-// NewMiddleware creates a new named middleware with the given name and handler.
-// This is the main factory function for creating named middleware.
-func NewMiddleware(name string, handler StdMiddleware) MiddlewareInterface {
-	return &middlewareImpl{
-		name:    name,
-		handler: handler,
+// MiddlewareOption defines a function type that can configure a middleware
+type MiddlewareOption func(*middlewareImpl)
+
+// WithName returns a MiddlewareOption that sets the name of the middleware
+func WithName(name string) MiddlewareOption {
+	return func(m *middlewareImpl) {
+		m.name = name
 	}
 }
 
-// NewAnonymousMiddleware creates a new middleware without a name.
-// This is useful for backward compatibility with existing code that uses anonymous middleware.
-func NewAnonymousMiddleware(handler StdMiddleware) MiddlewareInterface {
-	return &middlewareImpl{
-		name:    "",
-		handler: handler,
+// WithHandler returns a MiddlewareOption that sets the handler function of the middleware
+func WithHandler(handler StdMiddleware) MiddlewareOption {
+	return func(m *middlewareImpl) {
+		m.handler = handler
 	}
+}
+
+// ===========================================================================
+// = CONSTTRUCTORS
+// ===========================================================================
+
+// NewMiddleware creates a new middleware with the provided options.
+// Example: NewMiddleware(WithName("auth"), WithHandler(myAuthHandler))
+func NewMiddleware(opts ...MiddlewareOption) MiddlewareInterface {
+	m := &middlewareImpl{}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// NewAnonymousMiddleware creates a new middleware with the given handler.
+// This is a convenience function that's equivalent to NewMiddleware(WithHandler(handler)).
+// It's maintained for backward compatibility with existing code.
+func NewAnonymousMiddleware(handler StdMiddleware) MiddlewareInterface {
+	return NewMiddleware(WithHandler(handler))
 }
 
 // ===========================================================================
@@ -85,11 +105,16 @@ func MiddlewareFromFunction(handler StdMiddleware) MiddlewareInterface {
 // MiddlewaresToInterfaces converts a slice of StdMiddleware functions to MiddlewareInterface slice.
 // This is useful for migrating existing code that uses []StdMiddleware to []MiddlewareInterface.
 func MiddlewaresToInterfaces(middlewares []StdMiddleware) []MiddlewareInterface {
-	var interfaces []MiddlewareInterface
-	for _, mw := range middlewares {
-		interfaces = append(interfaces, NewAnonymousMiddleware(mw))
+	if middlewares == nil {
+		return nil
 	}
-	return interfaces
+	result := make([]MiddlewareInterface, 0, len(middlewares))
+	for _, mw := range middlewares {
+		if mw != nil {
+			result = append(result, NewAnonymousMiddleware(mw))
+		}
+	}
+	return result
 }
 
 // InterfacesToMiddlewares converts a slice of MiddlewareInterface to StdMiddleware functions.
@@ -110,13 +135,13 @@ func AddMiddlewaresToInterfaces(interfaces []MiddlewareInterface, middlewares []
 // ExecuteMiddlewareChain executes a chain of MiddlewareInterface in order.
 // This is a helper function that applies all middleware in the slice to the final handler.
 func ExecuteMiddlewareChain(middlewares []MiddlewareInterface, finalHandler http.Handler) http.Handler {
-	// Start with the final handler
+	// Apply middlewares in reverse order so they execute in the order they're defined
+	// when the request comes in
 	handler := finalHandler
-
-	// Apply middleware in reverse order (last middleware wraps first)
 	for i := len(middlewares) - 1; i >= 0; i-- {
-		handler = middlewares[i].Execute(handler)
+		if middlewares[i] != nil {
+			handler = middlewares[i].Execute(handler)
+		}
 	}
-
 	return handler
 }
