@@ -37,12 +37,22 @@ func (r *routerImpl) findMatchingRouteInDomain(domain DomainInterface, req *http
 	// Check direct routes in domain
 	for _, route := range domain.GetRoutes() {
 		if match, params := r.routeMatches(route, req); match {
+			// Create a copy of the request to avoid mutating the original
+			reqCopy := req.Clone(req.Context())
+			
 			// Add params to request context if any
 			if len(params) > 0 {
-				ctx := context.WithValue(req.Context(), ParamsKey, params)
-				req = req.WithContext(ctx)
+				ctx := context.WithValue(reqCopy.Context(), ParamsKey, params)
+				reqCopy = reqCopy.WithContext(ctx)
 			}
-			return route, r.buildHandler(route, nil, domain)
+			
+			// Build the handler with the updated request
+			handler := r.buildHandler(route, nil, domain)
+			
+			// Return a handler that will use the request with the updated context
+			return route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				handler.ServeHTTP(w, reqCopy)
+			})
 		}
 	}
 

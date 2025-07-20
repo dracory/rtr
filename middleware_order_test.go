@@ -23,11 +23,11 @@ func testMiddlewareSetup(t *testing.T) (rtr.RouterInterface, rtr.DomainInterface
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Get or initialize the execution order slice
 				var executionOrder *[]string
-				if val := r.Context().Value("executionOrder"); val != nil {
+				if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
 					executionOrder = val.(*[]string)
 				} else {
 					executionOrder = &[]string{}
-					r = r.WithContext(context.WithValue(r.Context(), "executionOrder", executionOrder))
+					r = r.WithContext(context.WithValue(r.Context(), rtr.ExecutionSequenceKey, executionOrder))
 				}
 
 				// Record middleware entry
@@ -102,7 +102,7 @@ func TestDirectRouteMiddlewareOrder(t *testing.T) {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			t.Log("HANDLER: Executing handler")
 			// Get the execution order from context
-			if val := r.Context().Value("executionOrder"); val != nil {
+			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
 				executionOrder = *val.(*[]string)
 			}
 			executionOrder = append(executionOrder, "handler")
