@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"maps"
 	"net/http"
 	"net/http/httptest"
 
@@ -48,29 +49,40 @@ func GetHead() rtr.MiddlewareInterface {
 
 func getHeadHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only handle HEAD requests
-		if r.Method == "HEAD" {
-			// Create a response recorder to capture the response
-			recorder := httptest.NewRecorder()
+		if next == nil {
+			http.Error(w, "Internal Server Error: handler is nil", http.StatusInternalServerError)
+			return
+		}
 
-			// Change the method to GET
-			r.Method = "GET"
-
-			// Process the request with the next handler
-			next.ServeHTTP(recorder, r)
-
-			// Copy only the headers (not the body) to the original response
-			headers := w.Header()
-			for k, v := range recorder.Header() {
-				headers[k] = v
-			}
-
-			// Set the status code and discard the body
-			w.WriteHeader(recorder.Code)
+		if r == nil {
+			http.Error(w, "Bad Request: request is nil", http.StatusBadRequest)
 			return
 		}
 
 		// For non-HEAD requests, just pass through
-		next.ServeHTTP(w, r)
+		if r.Method != "HEAD" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Handle HEAD request by routing to GET handler
+		req := r.WithContext(r.Context())
+		req.Method = "GET"
+
+		recorder := httptest.NewRecorder()
+		next.ServeHTTP(recorder, req)
+
+		// Ensure the recorder is valid
+		if recorder == nil {
+			http.Error(w, "Internal Server Error: failed to record response", http.StatusInternalServerError)
+			return
+		}
+
+		// Copy only the headers (not the body) to the original response
+		headers := w.Header()
+		maps.Copy(headers, recorder.Header())
+
+		// Set the status code and discard the body
+		w.WriteHeader(recorder.Code)
 	})
 }
