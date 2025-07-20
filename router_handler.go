@@ -10,45 +10,33 @@ func (r *routerImpl) buildHandler(route RouteInterface, groups []GroupInterface,
 	// Start with the route's own handler
 	finalHandler := http.Handler(http.HandlerFunc(route.GetHandler()))
 
-	// Collect all middlewares
-	var allMiddlewares []MiddlewareInterface
-
-	// Global 'before' middlewares
-	allMiddlewares = append(allMiddlewares, r.GetBeforeMiddlewares()...)
-
-	// Domain 'before' middlewares
-	if domain != nil {
-		allMiddlewares = append(allMiddlewares, domain.GetBeforeMiddlewares()...)
-	}
-
-	// Group 'before' middlewares (in order from parent to child)
-	for _, group := range groups {
-		allMiddlewares = append(allMiddlewares, group.GetBeforeMiddlewares()...)
-	}
-
-	// Route 'before' middlewares
-	allMiddlewares = append(allMiddlewares, route.GetBeforeMiddlewares()...)
-
-	// Route 'after' middlewares
-	allMiddlewares = append(allMiddlewares, route.GetAfterMiddlewares()...)
-
-	// Group 'after' middlewares (in reverse order from child to parent)
+	// Chain 'after' middlewares in reverse order (inner to outer)
+	finalHandler = r.chainMiddlewares(route.GetAfterMiddlewares(), finalHandler)
 	for i := len(groups) - 1; i >= 0; i-- {
-		allMiddlewares = append(allMiddlewares, groups[i].GetAfterMiddlewares()...)
+		finalHandler = r.chainMiddlewares(groups[i].GetAfterMiddlewares(), finalHandler)
 	}
-
-	// Domain 'after' middlewares
 	if domain != nil {
-		allMiddlewares = append(allMiddlewares, domain.GetAfterMiddlewares()...)
+		finalHandler = r.chainMiddlewares(domain.GetAfterMiddlewares(), finalHandler)
 	}
+	finalHandler = r.chainMiddlewares(r.GetAfterMiddlewares(), finalHandler)
 
-	// Global 'after' middlewares
-	allMiddlewares = append(allMiddlewares, r.GetAfterMiddlewares()...)
-
-	// Apply all middlewares in reverse order to chain them correctly
-	for i := len(allMiddlewares) - 1; i >= 0; i-- {
-		finalHandler = allMiddlewares[i].Execute(finalHandler)
+	// Chain 'before' middlewares (outer to inner)
+	finalHandler = r.chainMiddlewares(route.GetBeforeMiddlewares(), finalHandler)
+	for _, group := range groups {
+		finalHandler = r.chainMiddlewares(group.GetBeforeMiddlewares(), finalHandler)
 	}
+	if domain != nil {
+		finalHandler = r.chainMiddlewares(domain.GetBeforeMiddlewares(), finalHandler)
+	}
+	finalHandler = r.chainMiddlewares(r.GetBeforeMiddlewares(), finalHandler)
 
 	return finalHandler
 }
+
+func (r *routerImpl) chainMiddlewares(middlewares []MiddlewareInterface, handler http.Handler) http.Handler {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i].Execute(handler)
+	}
+	return handler
+}
+

@@ -231,21 +231,34 @@ func matchParameterizedRoute(routePath, requestPath string, paramNames []string)
 // findMatchingRoute attempts to find a route that matches the request
 // It returns the matched route and an http.Handler that includes all middlewares
 func (r *routerImpl) findMatchingRoute(req *http.Request) (RouteInterface, http.Handler) {
+	// Create a copy of the request to avoid mutating the original
+	reqCopy := req.Clone(req.Context())
+	
 	// Check direct routes on the router
 	for _, route := range r.routes {
-		if match, params := r.routeMatches(route, req); match {
+		// Create a fresh copy of the request for each route check
+		rc := reqCopy.Clone(reqCopy.Context())
+		
+		if match, params := r.routeMatches(route, rc); match {
 			// Add params to request context if any
 			if len(params) > 0 {
-				ctx := context.WithValue(req.Context(), ParamsKey, params)
-				req = req.WithContext(ctx)
+				ctx := context.WithValue(rc.Context(), ParamsKey, params)
+				rc = rc.WithContext(ctx)
 			}
-			return route, r.buildHandler(route, nil, nil)
+			
+			// Create a handler that will use the correct request with parameters
+			handler := r.buildHandler(route, nil, nil)
+			
+			// Return a handler that will use the request with the updated context
+			return route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				handler.ServeHTTP(w, rc)
+			})
 		}
 	}
 
 	// Check routes in groups
 	for _, group := range r.groups {
-		if route, handler := r.findMatchingRouteInGroup(group, req, nil); route != nil {
+		if route, handler := r.findMatchingRouteInGroup(group, reqCopy, nil); route != nil {
 			return route, handler
 		}
 	}
@@ -275,25 +288,23 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 			paramNames: route.(*routeImpl).paramNames,
 		}
 
-		if match, params := r.routeMatches(tempRoute, req); match {
+		// Create a copy of the request for this route check
+		reqCopy := req.Clone(req.Context())
+		
+		if match, params := r.routeMatches(tempRoute, reqCopy); match {
 			// Create a new request with the updated context containing the parameters
 			if len(params) > 0 {
-				// Get existing params from context if any
-				if existingParams, ok := req.Context().Value(ParamsKey).(map[string]string); ok && existingParams != nil {
-					// Merge with existing params
-					for k, v := range params {
-						existingParams[k] = v
-					}
-					params = existingParams
-				}
-
-				// Create a new request with the updated context
-				ctx := context.WithValue(req.Context(), ParamsKey, params)
-				req = req.WithContext(ctx)
+				ctx := context.WithValue(reqCopy.Context(), ParamsKey, params)
+				reqCopy = reqCopy.WithContext(ctx)
 			}
 
-			// Return the original route (not the temp one) with the wrapped handler
-			return route, r.buildHandler(route, currentGroups, nil)
+			// Create a handler that will use the correct request with parameters
+		handler := r.buildHandler(route, currentGroups, nil)
+			
+			// Return a handler that will use the request with the updated context
+			return route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				handler.ServeHTTP(w, reqCopy)
+			})
 		}
 	}
 
