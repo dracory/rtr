@@ -1,6 +1,6 @@
 **Prompt:**
 
-As an expert in Go HTTP routers, your task is to provide a comprehensive and objective comparison between the `dracory/rtr` project (the current router) and the Gin web framework (https://github.com/gin-gonic/gin).
+As an expert in Go HTTP routers, your task is to provide a comprehensive and objective comparison between the `dracory/rtr` project (the current router) and the `urbach/web` router (https://git.urbach.dev/go/web).
 
 For the `dracory/rtr` project, refer to the `GEMINI.md` file for detailed information on its features, architecture, and design principles.
 
@@ -46,7 +46,7 @@ Present your comparison in a clear, concise Markdown table format, followed by a
 
 ### Output Format:
 
-Please provide the comparison in a Markdown table with the following columns: "Criteria", "dracory/rtr", and "Gin".
+Please provide the comparison in a Markdown table with the following columns: "Criteria", "dracory/rtr", and "urbach/web".
 
 ### Summary:
 
