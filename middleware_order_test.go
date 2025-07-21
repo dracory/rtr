@@ -346,99 +346,113 @@ func TestNestedGroupMiddlewareOrder(t *testing.T) {
 	assertMiddlewareOrder(t, executionOrder, expectedOrder)
 }
 
-// // TestSiblingRoutesAndGroups tests that routes at the same level as groups only get global and domain middlewares
-// func TestSiblingRoutesAndGroups(t *testing.T) {
-// 	r, domain, traceBeforeMiddleware, _ := testMiddlewareSetup(t)
-// 	var executionOrder []string
+// TestSiblingRoutesAndGroups tests that routes at the same level as groups only get global and domain middlewares
+func TestSiblingRoutesAndGroups(t *testing.T) {
+	r, domain, traceBeforeMiddleware, _ := testMiddlewareSetup(t)
+	var executionOrder []string
 
-// 	// Create a group with middlewares
-// 	group := rtr.NewGroup().
-// 		SetPrefix("/api").
-// 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-// 			traceBeforeMiddleware("group_before_1"),
-// 		})
+	// Create a group with middlewares
+	group := rtr.NewGroup().
+		SetPrefix("/api").
+		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+			traceBeforeMiddleware("group_before_1"),
+		})
 
-// 	// Add a route to the group
-// 	groupRoute := rtr.NewRoute().
-// 		SetMethod("GET").
-// 		SetPath("/users").
-// 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-// 			executionOrder = *r.Context().Value("executionOrder").(*[]string)
-// 			executionOrder = append(executionOrder, "route_handler")
-// 			w.WriteHeader(http.StatusOK)
-// 		})
+	// Add a route to the group
+	groupRoute := rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/users").
+		SetHandler(func(w http.ResponseWriter, r *http.Request) {
+			// Record handler execution in the context
+			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
+				execOrder := val.(*[]string)
+				t.Logf("GROUP ROUTE HANDLER EXECUTION")
+				*execOrder = append(*execOrder, "group_route_handler")
+			}
+			w.WriteHeader(http.StatusOK)
+		})
 
-// 	group.AddRoute(groupRoute)
-// 	domain.AddGroup(group)
+	group.AddRoute(groupRoute)
+	domain.AddGroup(group)
 
-// 	// Add a route at the same level as the group
-// 	siblingRoute := rtr.NewRoute().
-// 		SetMethod("GET").
-// 		SetPath("/sibling").
-// 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-// 			executionOrder = *r.Context().Value("executionOrder").(*[]string)
-// 			executionOrder = append(executionOrder, "sibling_route_handler")
-// 			w.WriteHeader(http.StatusOK)
-// 		}).
-// 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
-// 			traceBeforeMiddleware("sibling_before_1"),
-// 		})
+	// Add a route at the same level as the group
+	siblingRoute := rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/sibling").
+		SetHandler(func(w http.ResponseWriter, r *http.Request) {
+			// Record handler execution in the context
+			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
+				execOrder := val.(*[]string)
+				t.Logf("SIBLING ROUTE HANDLER EXECUTION")
+				*execOrder = append(*execOrder, "sibling_route_handler")
+			}
+			w.WriteHeader(http.StatusOK)
+		}).
+		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+			traceBeforeMiddleware("sibling_before_1"),
+		})
 
-// 	domain.AddRoute(siblingRoute)
+	domain.AddRoute(siblingRoute)
 
-// 	// Test the sibling route (should only get global and domain middlewares)
-// 	req := httptest.NewRequest("GET", "/sibling", nil)
-// 	req.Host = "example.com"
-// 	w := httptest.NewRecorder()
-// 	executionOrder = nil
-// 	r.ServeHTTP(w, req)
+	// Test the sibling route (should only get global and domain middlewares)
+	req := httptest.NewRequest("GET", "/sibling", nil)
+	req.Host = "example.com"
+	w := httptest.NewRecorder()
 
-// 	expectedSiblingOrder := []string{
-// 		// Before middlewares (only global and domain)
-// 		"global_before_1 before",
-// 		"global_before_2 before",
-// 		"domain_before_1 before",
-// 		"domain_before_2 before",
-// 		"sibling_before_1 before",
+	executionOrder = []string{} // Initialize the slice
+	req = req.WithContext(context.WithValue(req.Context(), rtr.ExecutionSequenceKey, &executionOrder))
+	r.ServeHTTP(w, req)
 
-// 		"sibling_route_handler",
+	// Debug output
+	t.Logf("Execution order: %v", executionOrder)
 
-// 		// After middlewares (only domain and global)
-// 		"domain_after_1 after",
-// 		"domain_after_2 after",
-// 		"global_after_1 after",
-// 		"global_after_2 after",
-// 	}
+	expectedSiblingOrder := []string{
+		// Before middlewares (only global and domain)
+		"global_before_1_execute",
+		"global_before_2_execute",
+		"domain_before_1_execute",
+		"domain_before_2_execute",
+		"sibling_before_1_execute",
 
-// 	assertMiddlewareOrder(t, executionOrder, expectedSiblingOrder)
+		"sibling_route_handler",
 
-// 	// Test the group route (should get all middlewares)
-// 	req = httptest.NewRequest("GET", "/api/users", nil)
-// 	req.Host = "example.com"
-// 	w = httptest.NewRecorder()
-// 	executionOrder = nil
-// 	r.ServeHTTP(w, req)
+		// After middlewares (only domain and global)
+		"domain_after_1_execute",
+		"domain_after_2_execute",
+		"global_after_1_execute",
+		"global_after_2_execute",
+	}
 
-// 	expectedGroupOrder := []string{
-// 		// Before middlewares (all levels)
-// 		"global_before_1 before",
-// 		"global_before_2 before",
-// 		"domain_before_1 before",
-// 		"domain_before_2 before",
-// 		"group_before_1 before",
-// 		"route_handler",
-// 		// After middlewares (all levels, reversed)
-// 		"domain_after_1 after",
-// 		"domain_after_2 after",
-// 		"group_after_1 after",
-// 		"group_after_2 after",
-// 		"route_after_1 after",
-// 		"global_after_1 after",
-// 		"global_after_2 after",
-// 	}
+	assertMiddlewareOrder(t, executionOrder, expectedSiblingOrder)
 
-// 	assertMiddlewareOrder(t, executionOrder, expectedGroupOrder)
-// }
+	// Test the group route (should get all middlewares)
+	req = httptest.NewRequest("GET", "/api/users", nil)
+	req.Host = "example.com"
+	w = httptest.NewRecorder()
+	executionOrder = []string{} // Reset execution order
+	req = req.WithContext(context.WithValue(req.Context(), rtr.ExecutionSequenceKey, &executionOrder))
+	r.ServeHTTP(w, req)
+
+	// Debug output
+	t.Logf("Group route execution order: %v", executionOrder)
+
+	expectedGroupOrder := []string{
+		// Before middlewares (all levels)
+		"global_before_1_execute",
+		"global_before_2_execute",
+		"domain_before_1_execute",
+		"domain_before_2_execute",
+		"group_before_1_execute",
+		"group_route_handler",
+		// After middlewares (all levels, reversed)
+		"domain_after_1_execute",
+		"domain_after_2_execute",
+		"global_after_1_execute",
+		"global_after_2_execute",
+	}
+
+	assertMiddlewareOrder(t, executionOrder, expectedGroupOrder)
+}
 
 // assertMiddlewareOrder is a helper function to assert the middleware execution order
 // It verifies that the actual middleware execution order matches the expected order

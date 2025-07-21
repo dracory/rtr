@@ -34,6 +34,16 @@ func (r *routerImpl) findMatchingDomain(host string) DomainInterface {
 
 // findMatchingRouteInDomain finds a route that matches the request within a domain
 func (r *routerImpl) findMatchingRouteInDomain(domain DomainInterface, req *http.Request) (RouteInterface, http.Handler) {
+	// First check if the domain matches the request host
+	host := req.Host
+	if host == "" {
+		host = req.URL.Host
+	}
+
+	if !domain.Match(host) {
+		return nil, nil
+	}
+
 	// Check direct routes in domain
 	for _, route := range domain.GetRoutes() {
 		if match, params := r.routeMatches(route, req); match {
