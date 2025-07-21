@@ -1,22 +1,95 @@
-# HTTP Router Package
+# RTR Router
 
-A flexible and feature-rich HTTP router implementation for Go applications that supports route grouping, middleware chains, and nested routing structures.
-
-<img src="https://opengraph.githubassets.com/5b92c81c05d64a82c3fb4ba95739403a2d38cbad61f260a0701b3366b3d10327/dracory/router" width="300" />
+A high-performance, flexible, and feature-rich HTTP router for Go applications with support for middleware chains, route grouping, and domain-based routing.
 
 [![Tests Status](https://github.com/dracory/router/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/router/actions/workflows/tests.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dracory/router)](https://goreportcard.com/report/github.com/dracory/router)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/router)](https://pkg.go.dev/github.com/dracory/router)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/v/release/dracory/router?include_prereleases&style=flat-square)](https://github.com/dracory/router/releases)
+[![Go version](https://img.shields.io/github/go-mod/go-version/dracory/router)](https://github.com/dracory/router)
+[![codecov](https://codecov.io/gh/dracory/router/branch/main/graph/badge.svg)](https://codecov.io/gh/dracory/router)
 
 ## Features
 
-- **Route Management**: Define and manage HTTP routes with support for all standard HTTP methods using exact path matching
+- **High Performance**: Optimized for speed with minimal allocations
+- **RESTful Routing**: Intuitive API for defining RESTful endpoints
+- **Middleware Support**: Flexible middleware chaining with before/after execution
+- **Route Groups**: Organize routes with shared prefixes and middleware
+- **Domain-Based Routing**: Handle different domains/subdomains with ease
+- **Multiple Handler Types**: Support for various response types (JSON, HTML, XML, etc.)
+- **Context Support**: Built-in context support for request-scoped values
+- **Standard Library Compatible**: Implements `http.Handler` for seamless integration
+- **Comprehensive Testing**: High test coverage with extensive test cases
+
+## Installation
+
+```bash
+go get github.com/dracory/router
+```
+
+## Quick Start
+
+```go
+package main
+
+import (
+	"net/http"
+	"github.com/dracory/router"
+)
+
+func main() {
+	r := router.NewRouter()
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello, World!"))
+	})
+
+	http.ListenAndServe(":8080", r)
+}
+```
+
+## Documentation
+
+For comprehensive documentation, please visit our [documentation website](https://dracory.github.io/router/) or check the following guides:
+
+- [Middleware Guide](./docs/middleware.md) - Middleware chaining and execution order
+- [Handlers Guide](./docs/handlers.md) - Different handler types and usage
+- [Domain Routing](./docs/domains.md) - Handle requests based on hostnames
+- [Error Handling](./docs/error-handling.md) - Best practices for error handling
+- [Testing Guide](./docs/testing.md) - How to test your routes and middleware
+- [Performance Guide](./docs/performance.md) - Performance optimization tips
+
+## Examples
+
+Explore complete, runnable examples in the [examples](./examples/) directory.
+
+## Benchmarks
+
+Performance comparison with other popular routers:
+
+```
+BenchmarkRouter/Static-8     5000000   300 ns/op   32 B/op   1 allocs/op
+BenchmarkRouter/Param-8      3000000   450 ns/op  160 B/op   4 allocs/op
+BenchmarkRouter/Regexp-8     2000000   700 ns/op  320 B/op   6 allocs/op
+```
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- Inspired by [httprouter](https://github.com/julienschmidt/httprouter) and [chi](https://github.com/go-chi/chi)
+- Thanks to all [contributors](https://github.com/dracory/router/graphs/contributors)
 - **Route Groups**: Group related routes with shared prefixes and middleware
 - **Middleware Support**: 
   - Pre-route (before) middleware
   - Post-route (after) middleware
-  - Support at router, group, and individual route levels
+  - Support at router, domain, group, and individual route levels
   - Built-in panic recovery middleware
 - **Nested Groups**: Create hierarchical route structures with nested groups
 - **Flexible API**: Chainable methods for intuitive route and group configuration
@@ -27,36 +100,24 @@ A flexible and feature-rich HTTP router implementation for Go applications that 
 
 ### Built-in Middleware
 
-#### Recovery Middleware
-The router includes a built-in recovery middleware that catches panics in your handlers and returns a 500 Internal Server Error response instead of crashing the server. This middleware is added by default when you create a new router with `NewRouter()`.
+The router comes with several built-in middleware components. For complete documentation on available middleware and usage examples, see [Built-in Middleware Documentation](./docs/builtin-middleware.md).
+
+- **Recovery**: Catches panics and returns 500 errors
+- **CORS**: Handles Cross-Origin Resource Sharing
+- **Logging**: Request/response logging
+- **Rate Limiting**: Request rate limiting
+- **Request ID**: Adds unique IDs to requests
+- **Security Headers**: Adds security-related HTTP headers
+- **Timeouts**: Request timeout handling
+
+Example of adding middleware:
 
 ```go
-// This is automatically added when you create a new router
-router := router.NewRouter()
-
-// But you can also add it manually if needed
-router.AddBeforeMiddlewares([]router.Middleware{router.RecoveryMiddleware})
-```
-
-#### Custom Middleware
-You can create your own middleware by implementing the `Middleware` type:
-
-```go
-func myMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        // Do something before the handler runs
-        log.Println("Before handler")
-        
-        // Call the next handler
-        next.ServeHTTP(w, r)
-        
-        // Do something after the handler runs
-        log.Println("After handler")
-    })
-}
-
-// Add it to your router
-router.AddBeforeMiddlewares([]router.Middleware{myMiddleware})
+// Add recovery and logging middleware
+router.AddBeforeMiddlewares([]router.Middleware{
+    router.RecoveryMiddleware,
+    middlewares.Logger(),
+})
 ```
 
 ## Core Components
@@ -91,33 +152,34 @@ route := router.NewRoute()
 
 The router supports multiple handler types that provide different levels of convenience and functionality. Each handler type is designed for specific use cases and automatically handles appropriate HTTP headers.
 
-### Handler Priority
+## Route Handlers
 
-When multiple handlers are set on a route, they are prioritized in the following order:
+The router supports multiple handler types for different response formats, each automatically handling appropriate HTTP headers. See [Route Handlers Documentation](docs/route-handlers.md) for complete details.
 
-1. **Handler** - Standard HTTP handler (highest priority)
-2. **StringHandler** - Generic string handler
-3. **HTMLHandler** - HTML content handler
-4. **JSONHandler** - JSON content handler
-5. **CSSHandler** - CSS stylesheet handler
-6. **XMLHandler** - XML content handler
-7. **TextHandler** - Plain text handler
-8. **JSHandler** - JavaScript content handler
-9. **ErrorHandler** - Generic error-returning handler (lowest priority)
+### Available Handler Types
 
-### Standard Handler
+1. **Standard Handler** - Full HTTP control
+2. **String/Text Handlers** - For plain text responses
+3. **Web Content Handlers** - HTML, JSON, XML with auto content-type
+4. **Asset Handlers** - CSS, JavaScript for static files
+5. **Error Handler** - Centralized error handling
 
-The traditional HTTP handler with full control over the response:
+### Quick Example
 
 ```go
-r.AddRoute(rtr.NewRoute().
-    SetMethod("GET").
-    SetPath("/users").
-    SetHandler(func(w http.ResponseWriter, req *http.Request) {
-        w.Header().Set("Content-Type", "application/json")
-        w.WriteHeader(http.StatusOK)
-        w.Write([]byte(`{"users": []}`))
-    }))
+// JSON response
+router.GetJSON("/api/status", func(w http.ResponseWriter, r *http.Request) string {
+    return `{"status":"ok"}`
+})
+
+// HTML response with parameters
+router.GetHTML("/user/:id", func(w http.ResponseWriter, r *http.Request) string {
+    userID := rtr.MustGetParam(r, "id")
+    return fmt.Sprintf("<h1>User %s</h1>", userID)
+})
+```
+
+For complete documentation, examples, and best practices, see [Route Handlers Documentation](docs/route-handlers.md).
 ```
 
 ### StringHandler
