@@ -220,10 +220,12 @@ func TestGroupMiddlewareOrder(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
+			// Record handler execution in the context
 			if val := r.Context().Value(rtr.ExecutionSequenceKey); val != nil {
-				executionOrder = *val.(*[]string)
+				execOrder := val.(*[]string)
+				t.Logf("HANDLER EXECUTION")
+				*execOrder = append(*execOrder, "handler")
 			}
-			executionOrder = append(executionOrder, "handler")
 			w.WriteHeader(http.StatusOK)
 		}).
 		AddBeforeMiddlewares([]rtr.MiddlewareInterface{
@@ -240,6 +242,8 @@ func TestGroupMiddlewareOrder(t *testing.T) {
 	req.Host = "example.com"
 	w := httptest.NewRecorder()
 
+	// Create a request with a context that has our execution order slice
+	req = req.WithContext(context.WithValue(req.Context(), rtr.ExecutionSequenceKey, &executionOrder))
 	r.ServeHTTP(w, req)
 
 	expectedOrder := []string{
@@ -254,8 +258,8 @@ func TestGroupMiddlewareOrder(t *testing.T) {
 		"handler",
 		// After middlewares (inner to outer)
 		"route_after_1_execute",
-		"group_after_2_execute",
 		"group_after_1_execute",
+		"group_after_2_execute",
 		"domain_after_1_execute",
 		"domain_after_2_execute",
 		"global_after_1_execute",

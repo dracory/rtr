@@ -54,16 +54,6 @@ func (r *routerImpl) buildHandler(route RouteInterface, groups []GroupInterface,
 	handler = applyMiddlewaresForward(handler, afterMiddlewares)
 	handler = applyMiddlewaresBackward(handler, beforeMiddlewares)
 
-	// // 3. First, wrap the handler with after middlewares (in reverse order)
-	// for i := len(afterMiddlewares) - 1; i >= 0; i-- {
-	// 	handler = afterMiddlewares[i].Execute(handler)
-	// }
-
-	// // 4. Then wrap with before middlewares (in reverse order)
-	// for i := len(beforeMiddlewares) - 1; i >= 0; i-- {
-	// 	handler = beforeMiddlewares[i].Execute(handler)
-	// }
-
 	return handler
 }
 
