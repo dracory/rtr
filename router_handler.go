@@ -4,8 +4,11 @@ import (
 	"net/http"
 )
 
-// buildHandler constructs the final http.Handler for a given route, applying all relevant middleware
-// in the correct order: global before → domain before → group before → route before → handler → route after → group after → domain after → global after.
+// buildHandler constructs the final http.Handler for a given route,
+// applying all relevant middleware in the correct order:
+// global before → domain before → group before → route before →
+// handler →
+// route after → group after → domain after → global after.
 func (r *routerImpl) buildHandler(route RouteInterface, groups []GroupInterface, domain DomainInterface) http.Handler {
 	// Start with the route's own handler
 	handler := http.Handler(http.HandlerFunc(route.GetHandler()))
@@ -48,17 +51,32 @@ func (r *routerImpl) buildHandler(route RouteInterface, groups []GroupInterface,
 	// 2.4 Add route before middlewares (innermost)
 	beforeMiddlewares = append(beforeMiddlewares, route.GetBeforeMiddlewares()...)
 
-	// 3. First, wrap the handler with after middlewares (in reverse order)
-	for i := len(afterMiddlewares) - 1; i >= 0; i-- {
-		handler = afterMiddlewares[i].Execute(handler)
-	}
+	handler = applyMiddlewaresForward(handler, afterMiddlewares)
+	handler = applyMiddlewaresBackward(handler, beforeMiddlewares)
 
-	// 4. Then wrap with before middlewares (in reverse order)
-	for i := len(beforeMiddlewares) - 1; i >= 0; i-- {
-		handler = beforeMiddlewares[i].Execute(handler)
-	}
+	// // 3. First, wrap the handler with after middlewares (in reverse order)
+	// for i := len(afterMiddlewares) - 1; i >= 0; i-- {
+	// 	handler = afterMiddlewares[i].Execute(handler)
+	// }
+
+	// // 4. Then wrap with before middlewares (in reverse order)
+	// for i := len(beforeMiddlewares) - 1; i >= 0; i-- {
+	// 	handler = beforeMiddlewares[i].Execute(handler)
+	// }
 
 	return handler
 }
 
+func applyMiddlewaresForward(handler http.Handler, middlewares []MiddlewareInterface) http.Handler {
+	for _, middleware := range middlewares {
+		handler = middleware.Execute(handler)
+	}
+	return handler
+}
 
+func applyMiddlewaresBackward(handler http.Handler, middlewares []MiddlewareInterface) http.Handler {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i].Execute(handler)
+	}
+	return handler
+}

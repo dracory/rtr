@@ -281,8 +281,20 @@ func (r *routerImpl) findMatchingRouteInGroup(group GroupInterface, req *http.Re
 				reqCopy = reqCopy.WithContext(ctx)
 			}
 
+			// Find the domain that matches this request (if any)
+			var domain DomainInterface
+			host := req.Host
+			if host != "" {
+				for _, d := range r.domains {
+					if d.Match(host) {
+						domain = d
+						break
+					}
+				}
+			}
+
 			// Create a handler that will use the correct request with parameters
-			handler := r.buildHandler(route, currentGroups, nil)
+			handler := r.buildHandler(route, currentGroups, domain)
 
 			// Return a handler that will use the request with the updated context
 			return route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
