@@ -4,17 +4,13 @@ go 1.24.0
 
 require (
 	github.com/go-chi/chi/v5 v5.2.2
-	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/stretchr/testify v1.10.0
+	github.com/go-chi/cors v1.2.2
+	github.com/jedib0t/go-pretty/v6 v6.6.8
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-chi/cors v1.2.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (

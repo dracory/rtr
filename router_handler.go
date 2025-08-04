@@ -10,63 +10,69 @@ import (
 // handler →
 // route after → group after → domain after → global after.
 func (r *routerImpl) buildHandler(route RouteInterface, groups []GroupInterface, domain DomainInterface) http.Handler {
-	// Start with the route's own handler
-	handler := http.Handler(http.HandlerFunc(route.GetHandler()))
-
-	// 1. First, collect all after middlewares in the order they should be applied (innermost first)
-	var afterMiddlewares []MiddlewareInterface
-
-	// 1.1 Add route after middlewares (innermost)
-	afterMiddlewares = append(afterMiddlewares, route.GetAfterMiddlewares()...)
-
-	// 1.2 Add group after middlewares (from innermost to outermost)
-	for i := len(groups) - 1; i >= 0; i-- {
-		afterMiddlewares = append(afterMiddlewares, groups[i].GetAfterMiddlewares()...)
-	}
-
-	// 1.3 Add domain after middlewares
-	if domain != nil {
-		afterMiddlewares = append(afterMiddlewares, domain.GetAfterMiddlewares()...)
-	}
-
-	// 1.4 Add global after middlewares (outermost)
-	afterMiddlewares = append(afterMiddlewares, r.GetAfterMiddlewares()...)
-
-	// 2. Now collect all before middlewares in the order they should be applied (outermost first)
-	var beforeMiddlewares []MiddlewareInterface
-
-	// 2.1 Add global before middlewares (outermost)
-	beforeMiddlewares = append(beforeMiddlewares, r.GetBeforeMiddlewares()...)
-
-	// 2.2 Add domain before middlewares
-	if domain != nil {
-		beforeMiddlewares = append(beforeMiddlewares, domain.GetBeforeMiddlewares()...)
-	}
-
-	// 2.3 Add group before middlewares (from outermost to innermost)
+	// Count total middlewares to pre-allocate slices
+	totalMiddlewares := 0
+	
+	// Count route middlewares
+	totalMiddlewares += len(route.GetAfterMiddlewares()) + len(route.GetBeforeMiddlewares())
+	
+	// Count group middlewares
 	for _, group := range groups {
-		beforeMiddlewares = append(beforeMiddlewares, group.GetBeforeMiddlewares()...)
+		totalMiddlewares += len(group.GetAfterMiddlewares()) + len(group.GetBeforeMiddlewares())
 	}
-
-	// 2.4 Add route before middlewares (innermost)
-	beforeMiddlewares = append(beforeMiddlewares, route.GetBeforeMiddlewares()...)
-
-	handler = applyMiddlewaresForward(handler, afterMiddlewares)
-	handler = applyMiddlewaresBackward(handler, beforeMiddlewares)
-
-	return handler
-}
-
-func applyMiddlewaresForward(handler http.Handler, middlewares []MiddlewareInterface) http.Handler {
-	for _, middleware := range middlewares {
-		handler = middleware.Execute(handler)
+	
+	// Count domain middlewares
+	if domain != nil {
+		totalMiddlewares += len(domain.GetAfterMiddlewares()) + len(domain.GetBeforeMiddlewares())
 	}
-	return handler
-}
+	
+	// Count global middlewares
+	globalAfter := r.GetAfterMiddlewares()
+	globalBefore := r.GetBeforeMiddlewares()
+	totalMiddlewares += len(globalAfter) + len(globalBefore)
 
-func applyMiddlewaresBackward(handler http.Handler, middlewares []MiddlewareInterface) http.Handler {
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		handler = middlewares[i].Execute(handler)
+	// Pre-allocate a single slice for all middlewares in execution order
+	allMiddlewares := make([]MiddlewareInterface, 0, totalMiddlewares)
+	
+	// 1. Add global before middlewares (outermost first)
+	allMiddlewares = append(allMiddlewares, globalBefore...)
+	
+	// 2. Add domain before middlewares
+	if domain != nil {
+		allMiddlewares = append(allMiddlewares, domain.GetBeforeMiddlewares()...)
 	}
+	
+	// 3. Add group before middlewares (from outermost to innermost)
+	for _, group := range groups {
+		allMiddlewares = append(allMiddlewares, group.GetBeforeMiddlewares()...)
+	}
+	
+	// 4. Add route before middlewares (innermost)
+	allMiddlewares = append(allMiddlewares, route.GetBeforeMiddlewares()...)
+	
+	// 5. Add route after middlewares (innermost)
+	allMiddlewares = append(allMiddlewares, route.GetAfterMiddlewares()...)
+	
+	// 6. Add group after middlewares (from innermost to outermost)
+	for i := len(groups) - 1; i >= 0; i-- {
+		allMiddlewares = append(allMiddlewares, groups[i].GetAfterMiddlewares()...)
+	}
+	
+	// 7. Add domain after middlewares
+	if domain != nil {
+		allMiddlewares = append(allMiddlewares, domain.GetAfterMiddlewares()...)
+	}
+	
+	// 8. Add global after middlewares (outermost)
+	allMiddlewares = append(allMiddlewares, globalAfter...)
+	
+	// Apply all middlewares in reverse order to build the handler chain
+	handler := http.Handler(http.HandlerFunc(route.GetHandler()))
+	for i := len(allMiddlewares) - 1; i >= 0; i-- {
+		if allMiddlewares[i] != nil {
+			handler = allMiddlewares[i].Execute(handler)
+		}
+	}
+	
 	return handler
 }
