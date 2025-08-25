@@ -2,6 +2,16 @@ package rtr
 
 import "net/http"
 
+// appendReversed appends the elements of src to dst in reverse order and returns dst.
+// Used to preserve definition order at execution time when chains are built via
+// reverse wrapping (e.g., middleware assembly).
+func appendReversed(dst []MiddlewareInterface, src []MiddlewareInterface) []MiddlewareInterface {
+    for i := len(src) - 1; i >= 0; i-- {
+        dst = append(dst, src[i])
+    }
+    return dst
+}
+
 // ToStdHandler converts any string-returning handler to a standard Handler.
 // It simply writes the returned string to the response without setting any headers.
 // The string handler is responsible for setting any headers it needs.
