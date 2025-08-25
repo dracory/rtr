@@ -2,13 +2,13 @@
 
 A high-performance, flexible, and feature-rich HTTP router for Go applications with support for middleware chains, route grouping, and domain-based routing.
 
-[![Tests Status](https://github.com/dracory/router/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/router/actions/workflows/tests.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dracory/router)](https://goreportcard.com/report/github.com/dracory/router)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/router)](https://pkg.go.dev/github.com/dracory/router)
+[![Tests Status](https://github.com/dracory/rtr/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/rtr/actions/workflows/tests.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dracory/rtr)](https://goreportcard.com/report/github.com/dracory/rtr)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/rtr)](https://pkg.go.dev/github.com/dracory/rtr)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![GitHub release](https://img.shields.io/github/v/release/dracory/router?include_prereleases&style=flat-square)](https://github.com/dracory/router/releases)
-[![Go version](https://img.shields.io/github/go-mod/go-version/dracory/router)](https://github.com/dracory/router)
-[![codecov](https://codecov.io/gh/dracory/router/branch/main/graph/badge.svg)](https://codecov.io/gh/dracory/router)
+[![GitHub release](https://img.shields.io/github/v/release/dracory/rtr?include_prereleases&style=flat-square)](https://github.com/dracory/rtr/releases)
+[![Go version](https://img.shields.io/github/go-mod/go-version/dracory/rtr)](https://github.com/dracory/rtr)
+[![codecov](https://codecov.io/gh/dracory/rtr/branch/main/graph/badge.svg)](https://codecov.io/gh/dracory/rtr)
 
 ## Features
 
@@ -25,7 +25,7 @@ A high-performance, flexible, and feature-rich HTTP router for Go applications w
 ## Installation
 
 ```bash
-go get github.com/dracory/router
+go get github.com/dracory/rtr
 ```
 
 ## Quick Start
@@ -35,14 +35,14 @@ package main
 
 import (
 	"net/http"
-	"github.com/dracory/router"
+	"github.com/dracory/rtr"
 )
 
 func main() {
-	r := router.NewRouter()
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r := rtr.NewRouter()
+	r.AddRoute(rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello, World!"))
-	})
+	}))
 
 	http.ListenAndServe(":8080", r)
 }
@@ -50,7 +50,7 @@ func main() {
 
 ## Documentation
 
-For comprehensive documentation, please visit our [documentation website](https://dracory.github.io/router/) or check the following guides:
+For comprehensive documentation, see the [docs/](./docs/) directory in this repository or the package reference on [PkgGoDev](https://pkg.go.dev/github.com/dracory/rtr). Key guides:
 
 - [Middleware Guide](./docs/middleware.md) - Middleware chaining and execution order
 - [Handlers Guide](./docs/handlers.md) - Different handler types and usage
@@ -85,6 +85,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 - Inspired by [httprouter](https://github.com/julienschmidt/httprouter) and [chi](https://github.com/go-chi/chi)
 - Thanks to all [contributors](https://github.com/dracory/router/graphs/contributors)
+- Thanks to all [contributors](https://github.com/dracory/rtr/graphs/contributors)
 - **Route Groups**: Group related routes with shared prefixes and middleware
 - **Middleware Support**: 
   - Pre-route (before) middleware
@@ -113,12 +114,20 @@ The router comes with several built-in middleware components. For complete docum
 Example of adding middleware:
 
 ```go
-// Add recovery and logging middleware
-router.AddBeforeMiddlewares([]router.Middleware{
-    router.RecoveryMiddleware,
-    middlewares.Logger(),
+// Add recovery and logging middleware (named middlewares)
+r.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    rtr.NewMiddleware(rtr.WithName("Recovery"), rtr.WithHandler(middlewares.RecoveryMiddleware)),
+    rtr.NewMiddleware(rtr.WithName("Logger"), rtr.WithHandler(middlewares.Logger())),
 })
 ```
+
+#### Execution order (before/after)
+
+The middleware execution sequence strictly follows:
+
+- globals before → domains before → groups before → routes before
+- handler
+- routes after → groups after → domains after → globals after
 
 ## Core Components
 
@@ -127,7 +136,7 @@ router.AddBeforeMiddlewares([]router.Middleware{
 The main router component that handles HTTP requests and manages routes and groups.
 
 ```go
-router := router.NewRouter()
+router := rtr.NewRouter()
 ```
 
 ### Routes
@@ -136,13 +145,13 @@ Individual route definitions that specify HTTP method, path, and handler.
 
 ```go
 // Using shortcut methods
-route := router.Get("/users", handleUsers)      // Exact match: /users
-route := router.Post("/users", createUser)     // Exact match: /users
-route := router.Put("/users/123", updateUser)  // Exact match required: /users/123
-route := router.Delete("/users/123", deleteUser) // Exact match required: /users/123
+route := rtr.Get("/users", handleUsers)         // Exact match: /users
+route := rtr.Post("/users", createUser)         // Exact match: /users
+route := rtr.Put("/users/123", updateUser)      // Exact match required: /users/123
+route := rtr.Delete("/users/123", deleteUser)   // Exact match required: /users/123
 
 // Using method chaining
-route := router.NewRoute()
+route := rtr.NewRoute()
     .SetMethod("GET")
     .SetPath("/users")
     .SetHandler(handleUsers)
@@ -154,7 +163,7 @@ The router supports multiple handler types that provide different levels of conv
 
 ## Route Handlers
 
-The router supports multiple handler types for different response formats, each automatically handling appropriate HTTP headers. See [Route Handlers Documentation](docs/route-handlers.md) for complete details.
+The router supports multiple handler types for different response formats, each automatically handling appropriate HTTP headers. See [Route Handlers Documentation](docs/handlers.md) for complete details.
 
 ### Available Handler Types
 
@@ -168,19 +177,18 @@ The router supports multiple handler types for different response formats, each 
 
 ```go
 // JSON response
-router.GetJSON("/api/status", func(w http.ResponseWriter, r *http.Request) string {
+rtr.GetJSON("/api/status", func(w http.ResponseWriter, r *http.Request) string {
     return `{"status":"ok"}`
 })
 
 // HTML response with parameters
-router.GetHTML("/user/:id", func(w http.ResponseWriter, r *http.Request) string {
+rtr.GetHTML("/user/:id", func(w http.ResponseWriter, r *http.Request) string {
     userID := rtr.MustGetParam(r, "id")
     return fmt.Sprintf("<h1>User %s</h1>", userID)
 })
 ```
 
-For complete documentation, examples, and best practices, see [Route Handlers Documentation](docs/route-handlers.md).
-```
+For complete documentation, examples, and best practices, see [Route Handlers Documentation](docs/handlers.md).
 
 ### StringHandler
 
@@ -400,7 +408,7 @@ r.AddRoute(rtr.NewRoute().
 Route groups that share common prefixes and middleware.
 
 ```go
-group := router.NewGroup()
+group := rtr.NewGroup()
     .SetPrefix("/api")
     .AddRoute(route)
 ```
@@ -410,15 +418,15 @@ group := router.NewGroup()
 ### Basic Router Setup
 
 ```go
-r := router.NewRouter()
+r := rtr.NewRouter()
 
 // Add routes using shortcut methods
-r.AddRoute(router.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+r.AddRoute(rtr.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "Hello, World!")
 }))
 
 // Add routes using method chaining
-r.AddRoute(router.NewRoute()
+r.AddRoute(rtr.NewRoute()
     .SetMethod("GET")
     .SetPath("/users")
     .SetHandler(handleUsers))
@@ -428,10 +436,10 @@ r.AddRoute(router.NewRoute()
 
 ```go
 // Create an API group
-apiGroup := router.NewGroup().SetPrefix("/api")
+apiGroup := rtr.NewGroup().SetPrefix("/api")
 
 // Add routes to the group
-apiGroup.AddRoute(router.NewRoute()
+apiGroup.AddRoute(rtr.NewRoute()
     .SetMethod("GET")
     .SetPath("/users")
     .SetHandler(handleUsers))
@@ -444,19 +452,19 @@ r.AddGroup(apiGroup)
 
 ```go
 // Router-level middleware
-r.AddBeforeMiddlewares([]router.Middleware{
-    loggingMiddleware,
-    authenticationMiddleware,
+r.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    rtr.NewMiddleware(rtr.WithName("Logging"), rtr.WithHandler(loggingMiddleware)),
+    rtr.NewMiddleware(rtr.WithName("Auth"), rtr.WithHandler(authenticationMiddleware)),
 })
 
 // Group-level middleware
-apiGroup.AddBeforeMiddlewares([]router.Middleware{
-    apiKeyMiddleware,
+apiGroup.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    rtr.NewMiddleware(rtr.WithName("APIKey"), rtr.WithHandler(apiKeyMiddleware)),
 })
 
 // Route-level middleware
-route.AddBeforeMiddlewares([]router.Middleware{
-    specificRouteMiddleware,
+route.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    rtr.NewMiddleware(rtr.WithName("SpecificRoute"), rtr.WithHandler(specificRouteMiddleware)),
 })
 ```
 
@@ -496,7 +504,7 @@ rtr.DELETE("/users/:id", handler) // DELETE route
 // Chainable configuration
 rtr.GET("/users", handler).
     WithName("List Users").
-    WithBeforeMiddleware(authMiddleware).
+    WithBeforeMiddleware(rtr.NewAnonymousMiddleware(authMiddleware)).
     WithMetadata("version", "1.0")
 ```
 
@@ -594,28 +602,28 @@ The router supports domain-based routing, allowing you to define routes that onl
 
 ```go
 // Create a domain with exact match
-domain := router.NewDomain("example.com")
+domain := rtr.NewDomain("example.com")
 
 // Create a domain with wildcard subdomain matching
-wildcardDomain := router.NewDomain("*.example.com")
+wildcardDomain := rtr.NewDomain("*.example.com")
 
 // Create a domain that matches multiple patterns
-multiDomain := router.NewDomain("example.com", "api.example.com", "*.example.org")
+multiDomain := rtr.NewDomain("example.com", "api.example.com", "*.example.org")
 ```
 
 ### Adding Routes to a Domain
 
 ```go
 // Create a new domain
-domain := router.NewDomain("api.example.com")
+domain := rtr.NewDomain("api.example.com")
 
 // Add routes directly to the domain
-domain.AddRoute(router.Get("/users", handleUsers))
+domain.AddRoute(rtr.Get("/users", handleUsers))
 
 // Add multiple routes at once
-domain.AddRoutes([]router.RouteInterface{
-    router.Get("/users", handleUsers),
-    router.Post("/users", createUser),
+domain.AddRoutes([]rtr.RouteInterface{
+    rtr.Get("/users", handleUsers),
+    rtr.Post("/users", createUser),
 })
 ```
 
@@ -623,19 +631,20 @@ domain.AddRoutes([]router.RouteInterface{
 
 ```go
 // Create a domain
-domain := router.NewDomain("api.example.com")
+domain := rtr.NewDomain("api.example.com")
 
 // Create an API group
-apiGroup := router.NewGroup().SetPrefix("/v1")
+apiGroup := rtr.NewGroup().SetPrefix("/v1")
 
 // Add routes to the group
-apiGroup.AddRoute(router.Get("/products", handleProducts))
+apiGroup.AddRoute(rtr.Get("/products", handleProducts))
 
 // Add the group to the domain
 domain.AddGroup(apiGroup)
 
 // Add the domain to the router
-router.AddDomain(domain)
+r := rtr.NewRouter()
+r.AddDomain(domain)
 ```
 
 ### Domain Matching
@@ -650,45 +659,45 @@ Domains are matched against the `Host` header of incoming requests. The matching
 #### Port Matching
 - **No port in pattern**: Matches any port on that host
   ```go
-  domain := router.NewDomain("example.com")  // Matches example.com, example.com:8080, example.com:3000, etc.
+  domain := rtr.NewDomain("example.com")  // Matches example.com, example.com:8080, example.com:3000, etc.
   ```
 
 - **Exact port**: Requires exact port match
   ```go
-  domain := router.NewDomain("example.com:8080")  // Only matches example.com:8080
+  domain := rtr.NewDomain("example.com:8080")  // Only matches example.com:8080
   ```
 
 - **Wildcard port**: Matches any port on that host
   ```go
-  domain := router.NewDomain("example.com:*")  // Matches example.com with any port
+  domain := rtr.NewDomain("example.com:*")  // Matches example.com with any port
   ```
 
 - **IPv4 and IPv6 support**:
   ```go
   // IPv4 with port
-  ipv4Domain := router.NewDomain("127.0.0.1:8080")  // Matches 127.0.0.1:8080
+  ipv4Domain := rtr.NewDomain("127.0.0.1:8080")  // Matches 127.0.0.1:8080
   
   // IPv6 with port (note the square brackets)
-  ipv6Domain := router.NewDomain("[::1]:8080")  // Matches [::1]:8080
+  ipv6Domain := rtr.NewDomain("[::1]:8080")  // Matches [::1]:8080
   ```
 
 #### Examples
 
 ```go
 // Match any port on example.com
-anyPort := router.NewDomain("example.com")
+anyPort := rtr.NewDomain("example.com")
 
 // Match only port 8080
-exactPort := router.NewDomain("example.com:8080")
+exactPort := rtr.NewDomain("example.com:8080")
 
 // Match any subdomain on any port
-wildcardSubdomain := router.NewDomain("*.example.com:*")
+wildcardSubdomain := rtr.NewDomain("*.example.com:*")
 
 // Match localhost on any port
-localhost := router.NewDomain("localhost:*")
+localhost := rtr.NewDomain("localhost:*")
 
 // Match IPv6 localhost on port 3000
-ipv6Localhost := router.NewDomain("[::1]:3000")
+ipv6Localhost := rtr.NewDomain("[::1]:3000")
 ```
 
 ### Middleware on Domains
@@ -696,17 +705,17 @@ ipv6Localhost := router.NewDomain("[::1]:3000")
 Middleware can be added at the domain level to apply to all routes within that domain:
 
 ```go
-domain := router.NewDomain("admin.example.com")
+domain := rtr.NewDomain("admin.example.com")
 
 // Add middleware that will run before all routes in this domain
-domain.AddBeforeMiddlewares([]router.Middleware{
-    adminAuthMiddleware,
-    loggingMiddleware,
+domain.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    rtr.NewMiddleware(rtr.WithName("AdminAuth"), rtr.WithHandler(adminAuthMiddleware)),
+    rtr.NewMiddleware(rtr.WithName("Logging"), rtr.WithHandler(loggingMiddleware)),
 })
 
 // Add middleware that will run after all routes in this domain
-domain.AddAfterMiddlewares([]router.Middleware{
-    responseTimeMiddleware,
+domain.AddAfterMiddlewares([]rtr.MiddlewareInterface{
+    rtr.NewMiddleware(rtr.WithName("ResponseTime"), rtr.WithHandler(responseTimeMiddleware)),
 })
 ```
 
@@ -762,7 +771,7 @@ The router provides a built-in `List()` method for debugging and documentation p
 router := rtr.NewRouter()
 
 // Add some routes and middleware
-router.AddBeforeMiddlewares([]rtr.Middleware{loggingMiddleware})
+router.AddBeforeMiddlewares([]rtr.MiddlewareInterface{rtr.NewMiddleware(rtr.WithName("Logging"), rtr.WithHandler(loggingMiddleware))})
 router.AddRoute(rtr.Get("/", homeHandler).SetName("Home"))
 
 // Create a group
