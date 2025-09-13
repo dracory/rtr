@@ -110,6 +110,42 @@ func TestPathParameters(t *testing.T) {
 			expectedMatch:  false,
 			expectedParams: nil,
 		},
+		{
+			name:          "brace required parameter behaves like colon",
+			routePath:     "/users/{id}",
+			requestPath:   "/users/42",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"id": "42",
+			},
+		},
+		{
+			name:          "brace optional parameter behaves like colon optional",
+			routePath:     "/articles/{category}/{id?}",
+			requestPath:   "/articles/tech",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"category": "tech",
+			},
+		},
+		{
+			name:          "brace greedy parameter behaves like colon greedy (single)",
+			routePath:     "/files/{path...}",
+			requestPath:   "/files/readme.md",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"path": "readme.md",
+			},
+		},
+		{
+			name:          "brace greedy parameter behaves like colon greedy (multi)",
+			routePath:     "/files/{path...}",
+			requestPath:   "/files/user/docs/readme.md",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"path": "user/docs/readme.md",
+			},
+		},
 	}
 
 	for _, tc := range tests {

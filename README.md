@@ -629,6 +629,26 @@ The router uses the following matching rules:
 - Parameter names must be unique within a route
 - A greedy parameter (`:name...`) must be the last segment in the path
 
+### Brace-style parameter aliases
+RTR also accepts brace-style parameters as an alias for the colon syntax to stay close to the standard library style. The following are equivalent:
+
+- `{id}` ≡ `:id` (required, one segment)
+- `{id?}` ≡ `:id?` (optional)
+- `{path...}` ≡ `:path...` (greedy tail, must be last)
+
+Example:
+
+```go
+// Using brace aliases
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/users/{id}").
+    SetHandler(func(w http.ResponseWriter, r *http.Request) {
+        id := rtr.MustGetParam(r, "id")
+        _ = id
+    }))
+```
+
 ## Domain-based Routing
 
 The router supports domain-based routing, allowing you to define routes that only match specific domain names or patterns.

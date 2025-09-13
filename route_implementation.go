@@ -75,6 +75,42 @@ func (r *routeImpl) SetMethod(method string) RouteInterface {
 	return r
 }
 
+// normalizeBracesToColon converts brace-style parameters to colon syntax so the
+// router can parse one consistent format.
+// Examples:
+//
+//	/users/{id}      -> /users/:id
+//	/users/{id?}     -> /users/:id?
+//	/files/{path...} -> /files/:path...
+func normalizeBracesToColon(path string) string {
+	if path == "" {
+		return path
+	}
+	segments := strings.Split(path, "/")
+	for i, seg := range segments {
+		if normalized, ok := normalizeBraceSegment(seg); ok {
+			segments[i] = normalized
+		}
+	}
+	return strings.Join(segments, "/")
+}
+
+// normalizeBraceSegment converts a single brace-wrapped segment to colon syntax.
+// Returns the normalized segment and true if normalization occurred; otherwise the
+// original segment and false.
+func normalizeBraceSegment(seg string) (string, bool) {
+	if !(strings.HasPrefix(seg, "{") && strings.HasSuffix(seg, "}")) {
+		return seg, false
+	}
+	inner := seg[1 : len(seg)-1]
+	if inner == "" {
+		// Invalid empty name; leave segment unchanged
+		return seg, false
+	}
+	// Preserve any optional ('?') or greedy ('...') suffixes by returning as-is
+	return ":" + inner, true
+}
+
 // GetPath returns the URL path pattern associated with this route.
 // Returns the string representation of the path (e.g., "/users", "/api/products").
 func (r *routeImpl) GetPath() string {
@@ -85,13 +121,16 @@ func (r *routeImpl) GetPath() string {
 // This method supports method chaining by returning the RouteInterface.
 // The path parameter should be a valid URL path pattern (e.g., "/users/:id").
 func (r *routeImpl) SetPath(path string) RouteInterface {
-	r.path = path
+	// Normalize brace-style parameters to colon syntax to keep a single matching engine
+	// e.g., {id} -> :id, {id?} -> :id?, {path...} -> :path...
+	normalizedPath := normalizeBracesToColon(path)
+	r.path = normalizedPath
 	r.paramNames = nil
 	r.hasOptionalParams = false
 
 	// Extract parameter names from the path
-	segments := strings.Split(path, "/")
-	for _, segment := range segments {
+	segments := strings.SplitSeq(normalizedPath, "/")
+	for segment := range segments {
 		if segment == "" {
 			continue
 		}
