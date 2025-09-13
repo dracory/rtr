@@ -60,6 +60,56 @@ func TestPathParameters(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			},
 		},
+		{
+			name:          "thumbnail route parameters captured",
+			routePath:     "/th/:extension/:size/:quality/:path",
+			requestPath:   "/th/jpg/300x300/80/avatar.png",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"extension": "jpg",
+				"size":      "300x300",
+				"quality":   "80",
+				"path":      "avatar.png",
+			},
+		},
+		{
+			name:           "thumbnail route does not match extra segments",
+			routePath:      "/th/:extension/:size/:quality/:path",
+			requestPath:    "/th/jpg/300x300/80/user/avatar.png",
+			expectedMatch:  false,
+			expectedParams: nil,
+		},
+		{
+			name:          "thumbnail route greedy captures single segment",
+			routePath:     "/th/:extension/:size/:quality/:path...",
+			requestPath:   "/th/jpg/300x300/80/avatar.png",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"extension": "jpg",
+				"size":      "300x300",
+				"quality":   "80",
+				"path":      "avatar.png",
+			},
+		},
+		{
+			name:          "thumbnail route greedy captures multiple segments",
+			routePath:     "/th/:extension/:size/:quality/:path...",
+			requestPath:   "/th/jpg/300x300/80/user/avatar.png",
+			expectedMatch: true,
+			expectedParams: map[string]string{
+				"extension": "jpg",
+				"size":      "300x300",
+				"quality":   "80",
+				"path":      "user/avatar.png",
+			},
+		},
+		{
+			name:           "thumbnail route greedy requires at least one segment",
+			routePath:      "/th/:extension/:size/:quality/:path...",
+			requestPath:    "/th/jpg/300x300/80",
+			expectedMatch:  false,
+			expectedParams: nil,
+		},
 	}
 
 	for _, tc := range tests {

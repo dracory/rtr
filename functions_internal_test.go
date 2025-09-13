@@ -9,7 +9,7 @@ import (
 // TestAppendReversed verifies the helper correctly appends the source slice
 // to the destination slice in reverse order without mutating inputs.
 func TestAppendReversed(t *testing.T) {
-	mk := func(id string) MiddlewareInterface {
+	mk := func(_ string) MiddlewareInterface {
 		return NewAnonymousMiddleware(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				next.ServeHTTP(w, r)

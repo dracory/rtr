@@ -92,15 +92,21 @@ func (r *routeImpl) SetPath(path string) RouteInterface {
 	// Extract parameter names from the path
 	segments := strings.Split(path, "/")
 	for _, segment := range segments {
-		if len(segment) > 0 && (segment[0] == ':' || (len(segment) > 1 && segment[0] == ':' && segment[1] == '?')) {
-			// Remove the leading ':' and optional '?'
-			paramName := strings.TrimLeft(segment, ":")
-			if strings.HasSuffix(paramName, "?") {
-				paramName = strings.TrimSuffix(paramName, "?")
-				r.hasOptionalParams = true
-			}
-			r.paramNames = append(r.paramNames, paramName)
+		if segment == "" {
+			continue
 		}
+		if segment[0] != ':' {
+			continue
+		}
+		if strings.HasSuffix(segment, "?") {
+			r.hasOptionalParams = true
+		}
+
+		// Remove the leading ':' and optional/greedy suffixes
+		paramName := strings.TrimPrefix(segment, ":")
+		paramName = strings.TrimSuffix(paramName, "?")
+		paramName = strings.TrimSuffix(paramName, "...")
+		r.paramNames = append(r.paramNames, paramName)
 	}
 
 	return r

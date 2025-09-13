@@ -156,54 +156,80 @@ func (r *routerImpl) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func matchParameterizedRoute(routePath, requestPath string) (bool, map[string]string) {
 	routeSegments := strings.Split(routePath, "/")
 	requestSegments := strings.Split(requestPath, "/")
+
+	// Detect if the last route segment is a greedy parameter ':name...'
+	greedy := false
+	if len(routeSegments) > 0 {
+		last := routeSegments[len(routeSegments)-1]
+		if len(last) > 0 && last[0] == ':' && strings.HasSuffix(last, "...") {
+			greedy = true
+		}
+	}
+
 	hasMoreSegments := len(requestSegments) > len(routeSegments)
 	hasLessSegments := len(requestSegments) < len(routeSegments)
 
-	// If the request has more segments than the route, it can't match
-	if hasMoreSegments {
-		return false, nil
-	}
-
-	// If the request has fewer segments, check if the remaining segments are optional
-	if hasLessSegments {
-		// Check if all remaining segments are optional parameters
-		for i := len(requestSegments); i < len(routeSegments); i++ {
-			seg := routeSegments[i]
-			if len(seg) == 0 || seg[0] != ':' || !strings.HasSuffix(seg, "?") {
-				return false, nil
+	if greedy {
+		// Greedy param must capture at least one segment
+		if hasLessSegments {
+			return false, nil
+		}
+	} else {
+		// If the request has more segments than the route, it can't match
+		if hasMoreSegments {
+			return false, nil
+		}
+		// If the request has fewer segments, check if the remaining segments are optional
+		if hasLessSegments {
+			for i := len(requestSegments); i < len(routeSegments); i++ {
+				seg := routeSegments[i]
+				if len(seg) == 0 || seg[0] != ':' || !strings.HasSuffix(seg, "?") {
+					return false, nil
+				}
 			}
 		}
 	}
 
 	params := make(map[string]string)
-	paramIndex := 0
 
-	// Iterate over request segments using range
-	// Any remaining route segments must be optional (checked above)
+	if greedy {
+		// Match all but the last (greedy) route segment
+		for i := 0; i < len(routeSegments)-1; i++ {
+			routeSeg := routeSegments[i]
+			reqSeg := requestSegments[i]
+
+			if len(routeSeg) > 0 && routeSeg[0] == ':' {
+				// Parameter segment
+				paramName := strings.TrimLeft(routeSeg, ":")
+				paramName = strings.TrimSuffix(paramName, "?")
+				params[paramName] = reqSeg
+			} else if routeSeg != reqSeg {
+				return false, nil
+			}
+		}
+
+		// Handle the greedy segment
+		last := routeSegments[len(routeSegments)-1]
+		paramName := strings.TrimLeft(last, ":")
+		paramName = strings.TrimSuffix(paramName, "...")
+		remainder := strings.Join(requestSegments[len(routeSegments)-1:], "/")
+		if remainder == "" {
+			return false, nil
+		}
+		params[paramName] = remainder
+		return true, params
+	}
+
+	// Non-greedy: Iterate over request segments; any remaining route segments must be optional
 	for i, reqSeg := range requestSegments {
 		routeSeg := routeSegments[i]
 
-		// Handle parameter segments (starting with ':')
 		if len(routeSeg) > 0 && routeSeg[0] == ':' {
-			// Get the parameter name and check if it's optional
+			// Parameter segment
 			paramName := strings.TrimLeft(routeSeg, ":")
-			isOptional := strings.HasSuffix(paramName, "?")
-
-			// If the segment is empty and the parameter is optional, skip it
-			if reqSeg == "" && isOptional {
-				continue
-			}
-
-			// Clean up the parameter name if it was optional
-			if isOptional {
-				paramName = strings.TrimSuffix(paramName, "?")
-			}
-
-			// Store the parameter value with its name
+			paramName = strings.TrimSuffix(paramName, "?")
 			params[paramName] = reqSeg
-			paramIndex++
 		} else if routeSeg != reqSeg {
-			// If it's not a parameter and segments don't match, the route doesn't match
 			return false, nil
 		}
 	}

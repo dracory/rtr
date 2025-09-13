@@ -566,15 +566,50 @@ r.AddRoute(rtr.NewRoute().
     SetHandler(handleArticle))
 ```
 
-### Wildcard/Catch-all Routes
-Use `*` to match all remaining path segments:
+### Greedy Parameters (capture the remainder)
+Use `:name...` as the last segment to capture all remaining path segments into a single parameter.
+This mirrors the standard library pattern like `/files/{pathname...}`.
 
 ```go
-// Matches /static/js/main.js, /static/css/style.css, etc.
+// Matches both of the following and captures the remainder into "pathname":
+//   /files/images/photo.jpg         -> pathname = "images/photo.jpg"
+//   /files/user/albums/2025/img.png -> pathname = "user/albums/2025/img.png"
 r.AddRoute(rtr.NewRoute().
     SetMethod("GET").
-    SetPath("/static/*filepath").
-    SetHandler(serveStaticFile))
+    SetPath("/files/:pathname...").
+    SetHandler(func(w http.ResponseWriter, r *http.Request) {
+        pathname := rtr.MustGetParam(r, "pathname")
+        _ = pathname // use it
+    }))
+
+// Example for thumbnail routes: /th/:extension/:size/:quality/:path...
+//   /th/jpg/300x300/80/avatar.png        -> path = "avatar.png"
+//   /th/jpg/300x300/80/user/avatar.png   -> path = "user/avatar.png"
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/th/:extension/:size/:quality/:path...").
+    SetHandler(func(w http.ResponseWriter, r *http.Request) {
+        ext := rtr.MustGetParam(r, "extension")
+        size := rtr.MustGetParam(r, "size")
+        quality := rtr.MustGetParam(r, "quality")
+        tail := rtr.MustGetParam(r, "path")
+        _, _, _, _ = ext, size, quality, tail
+    }))
+```
+
+### Wildcard/Catch-all Routes
+Use `/*` to allow any suffix after a base path. This is a non-capturing catch-all; if you need the remainder, use a greedy parameter as shown above.
+
+```go
+// Matches any path starting with /static/ (non-capturing)
+// e.g., /static/js/main.js, /static/css/style.css
+r.AddRoute(rtr.NewRoute().
+    SetMethod("GET").
+    SetPath("/static/*").
+    SetHandler(func(w http.ResponseWriter, r *http.Request) {
+        // Use a greedy parameter instead if you need the suffix
+        w.WriteHeader(http.StatusOK)
+    }))
 ```
 
 ### Getting All Parameters
@@ -592,7 +627,7 @@ The router uses the following matching rules:
 - Required parameters must be present in the request path
 - Optional parameters can be omitted
 - Parameter names must be unique within a route
-- The wildcard parameter must be the last segment in the path
+- A greedy parameter (`:name...`) must be the last segment in the path
 
 ## Domain-based Routing
 
