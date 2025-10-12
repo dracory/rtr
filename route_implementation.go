@@ -107,8 +107,21 @@ func normalizeBraceSegment(seg string) (string, bool) {
 		// Invalid empty name; leave segment unchanged
 		return seg, false
 	}
+	suffix := ""
+	if strings.HasSuffix(inner, "...") {
+		suffix = "..."
+		inner = strings.TrimSuffix(inner, "...")
+	} else if strings.HasSuffix(inner, "?") {
+		suffix = "?"
+		inner = strings.TrimSuffix(inner, "?")
+	}
+
 	// Preserve any optional ('?') or greedy ('...') suffixes by returning as-is
-	return ":" + inner, true
+	if idx := strings.Index(inner, ":"); idx != -1 {
+		inner = inner[:idx]
+	}
+
+	return ":" + inner + suffix, true
 }
 
 // GetPath returns the URL path pattern associated with this route.

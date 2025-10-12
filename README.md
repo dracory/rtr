@@ -649,6 +649,10 @@ r.AddRoute(rtr.NewRoute().
     }))
 ```
 
+#### Brace-style regex normalization
+
+Brace parameters that include inline regular expressions are normalized by keeping the parameter name and dropping the regex suffix. For example, `{id:[0-9]+}` becomes `:id`, so `rtr.GetParam(r, "id")` and `rtr.MustGetParam(r, "id")` work as expected. The router currently skips evaluating the regex pattern, so apply any validation logic within middleware or handlers if needed.
+
 ## Domain-based Routing
 
 The router supports domain-based routing, allowing you to define routes that only match specific domain names or patterns.
