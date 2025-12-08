@@ -1,5 +1,11 @@
 package rtr_test
 
+// This file exercises handler-based APIs and response helpers:
+// - Handler types (HTML/JSON/CSS/XML/Text) and their content-types
+// - Handler priority rules (standard handler vs HTML/JSON)
+// - Response helper functions and ToHandler helpers
+// Controllers are covered separately in controller_interfaces_test.go.
+
 import (
 	"net/http"
 	"net/http/httptest"

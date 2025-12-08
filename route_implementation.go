@@ -49,6 +49,18 @@ type routeImpl struct {
 	// errorHandler is the error handler function that returns error message and status code
 	errorHandler ErrorHandler
 
+	// controller is the standard controller that implements ControllerInterface
+	controller ControllerInterface
+
+	// htmlController is the HTML controller that implements HTMLControllerInterface
+	htmlController HTMLControllerInterface
+
+	// jsonController is the JSON controller that implements JSONControllerInterface
+	jsonController JSONControllerInterface
+
+	// textController is the text controller that implements TextControllerInterface
+	textController TextControllerInterface
+
 	// name is an optional identifier for this route, useful for route generation and debugging
 	name string
 
@@ -231,6 +243,35 @@ func (r *routeImpl) GetHandler() StdHandler {
 		return ErrorHandlerToHandler(r.errorHandler)
 	}
 
+	// Priority 10: ControllerInterface - convert to standard Handler (no automatic headers)
+	if r.controller != nil {
+		return r.controller.Handler
+	}
+
+	// Priority 11: HTMLControllerInterface - convert to standard Handler with HTML headers
+	if r.htmlController != nil {
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.htmlController.Handler(w, req)
+			HTMLResponse(w, req, body)
+		}
+	}
+
+	// Priority 12: JSONControllerInterface - convert to standard Handler with JSON headers
+	if r.jsonController != nil {
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.jsonController.Handler(w, req)
+			JSONResponse(w, req, body)
+		}
+	}
+
+	// Priority 13: TextControllerInterface - convert to standard Handler with text headers
+	if r.textController != nil {
+		return func(w http.ResponseWriter, req *http.Request) {
+			body := r.textController.Handler(w, req)
+			TextResponse(w, req, body)
+		}
+	}
+
 	// No handler found
 	return nil
 }
@@ -352,6 +393,62 @@ func (r *routeImpl) GetErrorHandler() ErrorHandler {
 // The handler parameter should be a function that returns an error (nil means no error).
 func (r *routeImpl) SetErrorHandler(handler ErrorHandler) RouteInterface {
 	r.errorHandler = handler
+	return r
+}
+
+// GetController returns the controller associated with this route.
+// Returns the ControllerInterface implementation that will be called when this route is matched.
+func (r *routeImpl) GetController() ControllerInterface {
+	return r.controller
+}
+
+// SetController sets the controller for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The controller parameter should implement the ControllerInterface.
+func (r *routeImpl) SetController(controller ControllerInterface) RouteInterface {
+	r.controller = controller
+	return r
+}
+
+// GetHTMLController returns the HTML controller associated with this route.
+// Returns the HTMLControllerInterface implementation that will be called when this route is matched.
+func (r *routeImpl) GetHTMLController() HTMLControllerInterface {
+	return r.htmlController
+}
+
+// SetHTMLController sets the HTML controller for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The controller parameter should implement the HTMLControllerInterface.
+func (r *routeImpl) SetHTMLController(controller HTMLControllerInterface) RouteInterface {
+	r.htmlController = controller
+	return r
+}
+
+// GetJSONController returns the JSON controller associated with this route.
+// Returns the JSONControllerInterface implementation that will be called when this route is matched.
+func (r *routeImpl) GetJSONController() JSONControllerInterface {
+	return r.jsonController
+}
+
+// SetJSONController sets the JSON controller for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The controller parameter should implement the JSONControllerInterface.
+func (r *routeImpl) SetJSONController(controller JSONControllerInterface) RouteInterface {
+	r.jsonController = controller
+	return r
+}
+
+// GetTextController returns the text controller associated with this route.
+// Returns the TextControllerInterface implementation that will be called when this route is matched.
+func (r *routeImpl) GetTextController() TextControllerInterface {
+	return r.textController
+}
+
+// SetTextController sets the text controller for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The controller parameter should implement the TextControllerInterface.
+func (r *routeImpl) SetTextController(controller TextControllerInterface) RouteInterface {
+	r.textController = controller
 	return r
 }
 

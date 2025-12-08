@@ -168,3 +168,37 @@ customTimeout := middlewares.TimeoutWithConfig(middlewares.TimeoutConfig{
     },
 })
 ```
+
+## Domain Redirect Middleware
+
+### WWW → Naked Domain
+
+Redirects requests from `www.` subdomains to the naked domain using the incoming request scheme (defaulting to `https` when missing).
+
+```go
+import (
+    "github.com/dracory/rtr"
+    "github.com/dracory/rtr/middlewares"
+)
+
+router := rtr.NewRouter()
+router.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    middlewares.WwwToNakedDomainMiddleware(),
+})
+```
+
+### Naked → WWW Domain
+
+Redirects naked domains to `www.` subdomains. You can exclude specific hosts (e.g., `localhost`) via `hostExcludes`.
+
+```go
+import (
+    "github.com/dracory/rtr"
+    "github.com/dracory/rtr/middlewares"
+)
+
+router := rtr.NewRouter()
+router.AddBeforeMiddlewares([]rtr.MiddlewareInterface{
+    middlewares.NakedDomainToWwwMiddleware([]string{"localhost", "127.0.0.1"}),
+})
+```
