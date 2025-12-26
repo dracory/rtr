@@ -318,6 +318,70 @@ initApp();`
     }))
 ```
 
+## Serving Static Files
+
+RTR supports serving static files via a catch-all route pattern like `/static/*`.
+
+### Static files from disk
+
+Use `GetStatic` and return the directory path:
+
+```go
+router := rtr.NewRouter()
+
+// Serves ./static/* at /static/*
+router.AddRoute(rtr.GetStatic("/static/*", func(w http.ResponseWriter, r *http.Request) string {
+    return "./static"
+}))
+```
+
+Example:
+
+- `examples/static`
+
+### Embedded static files (embed.FS)
+
+Go embedding happens at build time. For embedded assets, use `GetStaticFS` together with `embed.FS` and `fs.Sub`.
+
+```go
+package main
+
+import (
+    "embed"
+    "io/fs"
+    "net/http"
+
+    "github.com/dracory/rtr"
+)
+
+// You can use either pattern:
+//   //go:embed static/*
+// or:
+//   //go:embed static
+//
+//go:embed static/*
+var staticFS embed.FS
+
+func main() {
+    router := rtr.NewRouter()
+
+    sub, _ := fs.Sub(staticFS, "static")
+    router.AddRoute(rtr.GetStaticFS("/static/*", sub))
+
+    http.ListenAndServe(":8080", router)
+}
+```
+
+Example:
+
+- `examples/static_embed`
+
+### Notes
+
+- **Prefix stripping**: when you mount at `/static/*`, the `/static` prefix is stripped before the file lookup.
+- **Security**: requests containing `..` in the path are rejected with `404`.
+- **404 behavior**: missing files return `404 Not Found`.
+
 ### ErrorHandler
 
 Handles errors by returning an error value. If the error is `nil`, no content is written. If an error is returned, the error message is written to the response:
