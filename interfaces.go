@@ -47,6 +47,11 @@ type TextHandler StringHandler
 // Returns a JavaScript string that will be wrapped with JSResponse().
 type JSHandler StringHandler
 
+// StaticHandler is a convenience shorthand handler that serves static files.
+// Returns the file path relative to the static directory.
+// The router will automatically serve files from the specified directory.
+type StaticHandler func(w http.ResponseWriter, r *http.Request) string
+
 // StdMiddleware represents a standard middleware function.
 // It is a function type that takes an http.Handler and returns an http.Handler.
 // StdMiddleware functions can be used to process requests before or after they reach the main handler.
@@ -128,6 +133,11 @@ type RouteInterface interface {
 	GetJSHandler() JSHandler
 	// SetJSHandler sets the JavaScript handler function for this route and returns the route for method chaining.
 	SetJSHandler(handler JSHandler) RouteInterface
+
+	// GetStaticHandler returns the static handler function associated with this route.
+	GetStaticHandler() StaticHandler
+	// SetStaticHandler sets the static handler function for this route and returns the route for method chaining.
+	SetStaticHandler(handler StaticHandler) RouteInterface
 
 	// GetErrorHandler returns the error handler function associated with this route.
 	GetErrorHandler() ErrorHandler

@@ -1,0 +1,38 @@
+{
+  "name": "Static File Server Example",
+  "version": "1.0.0",
+  "description": "Demonstrates static file serving capabilities of the rtr router",
+  "features": [
+    "Automatic Content-Type detection",
+    "Security protections against directory traversal",
+    "Proper 404 handling",
+    "Seamless integration with rtr routing",
+    "Support for all file types"
+  ],
+  "supportedFileTypes": [
+    ".html",
+    ".css",
+    ".js",
+    ".json",
+    ".png",
+    ".jpg",
+    ".gif",
+    ".svg",
+    ".txt",
+    ".pdf"
+  ],
+  "endpoints": {
+    "staticFiles": "/static/*",
+    "homePage": "/"
+  },
+  "examples": {
+    "css": "/static/style.css",
+    "javascript": "/static/script.js",
+    "data": "/static/data.json"
+  },
+  "security": {
+    "directoryTraversalProtection": true,
+    "pathSanitization": true,
+    "errorHandling": "Returns 404 for missing files"
+  }
+}

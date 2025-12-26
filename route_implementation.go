@@ -46,6 +46,9 @@ type routeImpl struct {
 	// jsHandler is the JavaScript handler function that returns JavaScript string
 	jsHandler JSHandler
 
+	// staticHandler is the static handler function that serves static files
+	staticHandler StaticHandler
+
 	// errorHandler is the error handler function that returns error message and status code
 	errorHandler ErrorHandler
 
@@ -222,7 +225,19 @@ func (r *routeImpl) GetHandler() StdHandler {
 		}
 	}
 
-	// Priority 7: TextHandler - convert to standard Handler with Text headers
+	// Priority 7: StaticHandler - convert to standard Handler for static file serving
+	if r.staticHandler != nil {
+		return func(w http.ResponseWriter, req *http.Request) {
+			staticDir := r.staticHandler(w, req)
+			urlPrefix := r.path
+			if strings.HasSuffix(urlPrefix, "/*") {
+				urlPrefix = strings.TrimSuffix(urlPrefix, "/*")
+			}
+			StaticFileServer(staticDir, urlPrefix)(w, req)
+		}
+	}
+
+	// Priority 8: TextHandler - convert to standard Handler with Text headers
 	if r.textHandler != nil {
 		return func(w http.ResponseWriter, req *http.Request) {
 			body := r.textHandler(w, req)
@@ -230,7 +245,7 @@ func (r *routeImpl) GetHandler() StdHandler {
 		}
 	}
 
-	// Priority 8: JSHandler - convert to standard Handler with JavaScript headers
+	// Priority 9: JSHandler - convert to standard Handler with JavaScript headers
 	if r.jsHandler != nil {
 		return func(w http.ResponseWriter, req *http.Request) {
 			body := r.jsHandler(w, req)
@@ -238,7 +253,7 @@ func (r *routeImpl) GetHandler() StdHandler {
 		}
 	}
 
-	// Priority 9: ErrorHandler - convert to standard Handler
+	// Priority 10: ErrorHandler - convert to standard Handler
 	if r.errorHandler != nil {
 		return ErrorHandlerToHandler(r.errorHandler)
 	}
@@ -379,6 +394,20 @@ func (r *routeImpl) GetJSHandler() JSHandler {
 // The handler parameter should be a function that returns JavaScript string.
 func (r *routeImpl) SetJSHandler(handler JSHandler) RouteInterface {
 	r.jsHandler = handler
+	return r
+}
+
+// GetStaticHandler returns the static handler function associated with this route.
+// Returns the StaticHandler function that will be called when this route is matched.
+func (r *routeImpl) GetStaticHandler() StaticHandler {
+	return r.staticHandler
+}
+
+// SetStaticHandler sets the static handler function for this route.
+// This method supports method chaining by returning the RouteInterface.
+// The handler parameter should be a function that returns the file path relative to static directory.
+func (r *routeImpl) SetStaticHandler(handler StaticHandler) RouteInterface {
+	r.staticHandler = handler
 	return r
 }
 
@@ -560,4 +589,10 @@ func GetXML(path string, handler XMLHandler) RouteInterface {
 // It is a shortcut method that combines setting the method to GET, path, and text handler.
 func GetText(path string, handler TextHandler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetTextHandler(handler)
+}
+
+// GetStatic creates a new GET route with the given path and static handler
+// It is a shortcut method that combines setting the method to GET, path, and static handler.
+func GetStatic(path string, handler StaticHandler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetStaticHandler(handler)
 }

@@ -1,14 +1,16 @@
 package rtr_test
 
 // This file exercises handler-based APIs and response helpers:
-// - Handler types (HTML/JSON/CSS/XML/Text) and their content-types
-// - Handler priority rules (standard handler vs HTML/JSON)
+// - Handler types (HTML/JSON/CSS/XML/Text/Static) and their content-types
+// - Handler priority rules (standard handler vs HTML/JSON/Static)
 // - Response helper functions and ToHandler helpers
 // Controllers are covered separately in controller_interfaces_test.go.
 
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/dracory/rtr"
@@ -366,5 +368,168 @@ func TestToHandlerHelpers(t *testing.T) {
 				t.Errorf("Expected Content-Type '%s', got '%s'", tt.expectedCT, contentType)
 			}
 		})
+	}
+}
+
+func TestStaticHandler(t *testing.T) {
+	// Create a temporary directory for test files
+	tempDir := t.TempDir()
+
+	// Create a test file
+	testContent := "body { color: blue; }"
+	testFile := tempDir + "/test.css"
+	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	route := rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/static/*").
+		SetStaticHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return tempDir // Return the static directory path
+		})
+
+	handler := route.GetHandler()
+	if handler == nil {
+		t.Fatal("Expected handler to be non-nil")
+	}
+
+	// Test serving the static file
+	req := httptest.NewRequest("GET", "/static/test.css", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+
+	body := w.Body.String()
+	if body != testContent {
+		t.Errorf("Expected body '%s', got '%s'", testContent, body)
+	}
+
+	// Check that Content-Type is set correctly for CSS
+	contentType := w.Header().Get("Content-Type")
+	if !strings.Contains(contentType, "text/css") {
+		t.Errorf("Expected Content-Type to contain 'text/css', got '%s'", contentType)
+	}
+}
+
+func TestStaticHandlerPreventsDirectoryTraversal(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create a test file
+	testContent := "safe content"
+	testFile := tempDir + "/safe.txt"
+	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	route := rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/static/*").
+		SetStaticHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return tempDir
+		})
+
+	handler := route.GetHandler()
+
+	// Test directory traversal attempt
+	req := httptest.NewRequest("GET", "/static/../../../etc/passwd", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404 for directory traversal attempt, got %d", w.Code)
+	}
+}
+
+func TestStaticHandlerFileNotFound(t *testing.T) {
+	tempDir := t.TempDir()
+
+	route := rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/static/*").
+		SetStaticHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return tempDir
+		})
+
+	handler := route.GetHandler()
+
+	// Test requesting non-existent file
+	req := httptest.NewRequest("GET", "/static/nonexistent.txt", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404 for non-existent file, got %d", w.Code)
+	}
+}
+
+func TestStaticHandlerPriority(t *testing.T) {
+	// Test that StaticHandler takes priority over TextHandler
+	tempDir := t.TempDir()
+	testContent := "static file content"
+	testFile := tempDir + "/test.txt"
+	if err := os.WriteFile(testFile, []byte(testContent), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	route := rtr.NewRoute().
+		SetMethod("GET").
+		SetPath("/static/*").
+		SetStaticHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return tempDir
+		}).
+		SetTextHandler(func(w http.ResponseWriter, r *http.Request) string {
+			return "text handler content"
+		})
+
+	handler := route.GetHandler()
+	if handler == nil {
+		t.Fatal("Expected handler to be non-nil")
+	}
+
+	req := httptest.NewRequest("GET", "/static/test.txt", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	body := w.Body.String()
+	if body != testContent {
+		t.Errorf("Expected '%s' (StaticHandler should take priority), got '%s'", testContent, body)
+	}
+}
+
+func TestStaticHandlerGetterSetter(t *testing.T) {
+	route := rtr.NewRoute()
+
+	// Test initial state
+	if route.GetStaticHandler() != nil {
+		t.Error("Expected initial StaticHandler to be nil")
+	}
+
+	// Test setter
+	staticHandler := func(w http.ResponseWriter, r *http.Request) string {
+		return "/static"
+	}
+
+	returnedRoute := route.SetStaticHandler(staticHandler)
+	if returnedRoute != route {
+		t.Error("SetStaticHandler should return the same route instance")
+	}
+
+	// Test getter
+	if route.GetStaticHandler() == nil {
+		t.Error("Expected StaticHandler to be non-nil after setting")
+	}
+
+	// Test that the handler works
+	handler := route.GetHandler()
+	if handler == nil {
+		t.Fatal("Expected handler to be non-nil")
 	}
 }

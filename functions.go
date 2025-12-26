@@ -1,15 +1,18 @@
 package rtr
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 // appendReversed appends the elements of src to dst in reverse order and returns dst.
 // Used to preserve definition order at execution time when chains are built via
 // reverse wrapping (e.g., middleware assembly).
 func appendReversed(dst []MiddlewareInterface, src []MiddlewareInterface) []MiddlewareInterface {
-    for i := len(src) - 1; i >= 0; i-- {
-        dst = append(dst, src[i])
-    }
-    return dst
+	for i := len(src) - 1; i >= 0; i-- {
+		dst = append(dst, src[i])
+	}
+	return dst
 }
 
 // ToStdHandler converts any string-returning handler to a standard Handler.
@@ -42,5 +45,41 @@ func ErrorHandlerToHandler(handler ErrorHandler) StdHandler {
 		if err != nil {
 			w.Write([]byte(err.Error()))
 		}
+	}
+}
+
+// StaticFileServer creates a file server handler for serving static files.
+// It uses http.FileServer to serve files from the specified directory.
+// The urlPrefix is stripped from the request path before serving from disk.
+//
+// Parameters:
+//   - staticDir: The root directory for static files.
+//   - urlPrefix: The URL prefix under which files are served (e.g. "/static").
+//
+// Returns:
+//   - A handler function that serves static files.
+
+func StaticFileServer(staticDir string, urlPrefix string) StdHandler {
+	// Create a file server for the static directory
+	fileServer := http.FileServer(http.Dir(staticDir))
+
+	prefix := urlPrefix
+	if prefix == "" {
+		prefix = "/"
+	}
+	if prefix != "/" && strings.HasSuffix(prefix, "/") {
+		prefix = strings.TrimSuffix(prefix, "/")
+	}
+
+	strip := http.StripPrefix(prefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "..") {
+			http.NotFound(w, r)
+			return
+		}
+		fileServer.ServeHTTP(w, r)
+	}))
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		strip.ServeHTTP(w, r)
 	}
 }
