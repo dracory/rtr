@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/dracory/rtr"
 )
@@ -531,5 +532,50 @@ func TestStaticHandlerGetterSetter(t *testing.T) {
 	handler := route.GetHandler()
 	if handler == nil {
 		t.Fatal("Expected handler to be non-nil")
+	}
+}
+
+func TestStaticFSHandler(t *testing.T) {
+	f := fstest.MapFS{
+		"style.css":  {Data: []byte("body{color:red}")},
+		"index.html": {Data: []byte("<h1>Home</h1>")},
+	}
+
+	route := rtr.GetStaticFS("/static/*", f)
+	handler := route.GetHandler()
+	if handler == nil {
+		t.Fatal("Expected handler to be non-nil")
+	}
+
+	req := httptest.NewRequest("GET", "/static/style.css", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+
+	if body := w.Body.String(); body != "body{color:red}" {
+		t.Errorf("Expected body 'body{color:red}', got '%s'", body)
+	}
+}
+
+func TestStaticFSHandlerNotFound(t *testing.T) {
+	f := fstest.MapFS{}
+
+	route := rtr.GetStaticFS("/static/*", f)
+	handler := route.GetHandler()
+	if handler == nil {
+		t.Fatal("Expected handler to be non-nil")
+	}
+
+	req := httptest.NewRequest("GET", "/static/missing.txt", nil)
+	w := httptest.NewRecorder()
+
+	handler(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", w.Code)
 	}
 }

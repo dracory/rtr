@@ -1,6 +1,7 @@
 package rtr
 
 import (
+	"io/fs"
 	"net/http"
 	"strings"
 )
@@ -595,4 +596,14 @@ func GetText(path string, handler TextHandler) RouteInterface {
 // It is a shortcut method that combines setting the method to GET, path, and static handler.
 func GetStatic(path string, handler StaticHandler) RouteInterface {
 	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetStaticHandler(handler)
+}
+
+func GetStaticFS(path string, fsys fs.FS) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetHandler(func(w http.ResponseWriter, r *http.Request) {
+		urlPrefix := path
+		if strings.HasSuffix(urlPrefix, "/*") {
+			urlPrefix = strings.TrimSuffix(urlPrefix, "/*")
+		}
+		StaticFileServerFS(fsys, urlPrefix)(w, r)
+	})
 }

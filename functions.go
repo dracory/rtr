@@ -1,6 +1,7 @@
 package rtr
 
 import (
+	"io/fs"
 	"net/http"
 	"strings"
 )
@@ -60,8 +61,11 @@ func ErrorHandlerToHandler(handler ErrorHandler) StdHandler {
 //   - A handler function that serves static files.
 
 func StaticFileServer(staticDir string, urlPrefix string) StdHandler {
-	// Create a file server for the static directory
-	fileServer := http.FileServer(http.Dir(staticDir))
+	return StaticFileServerFS(osDirFS(staticDir), urlPrefix)
+}
+
+func StaticFileServerFS(fsys fs.FS, urlPrefix string) StdHandler {
+	fileServer := http.FileServer(http.FS(fsys))
 
 	prefix := urlPrefix
 	if prefix == "" {
@@ -82,4 +86,14 @@ func StaticFileServer(staticDir string, urlPrefix string) StdHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		strip.ServeHTTP(w, r)
 	}
+}
+
+type dirFS string
+
+func osDirFS(dir string) fs.FS {
+	return dirFS(dir)
+}
+
+func (d dirFS) Open(name string) (fs.File, error) {
+	return http.Dir(string(d)).Open(name)
 }
