@@ -149,13 +149,19 @@ func (r *routerImpl) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Serve the request
-	handler.ServeHTTP(w, req)
+	if handler != nil {
+		handler.ServeHTTP(w, req)
+	}
 }
 
 // matchParameterizedRoute checks if a parameterized route matches the request path and extracts parameters
 func matchParameterizedRoute(routePath, requestPath string) (bool, map[string]string) {
 	routeSegments := strings.Split(routePath, "/")
 	requestSegments := strings.Split(requestPath, "/")
+
+	if routeSegments == nil || requestSegments == nil || len(requestSegments) == 0 {
+		return false, nil
+	}
 
 	// Detect if the last route segment is a greedy parameter ':name...'
 	greedy := false
@@ -195,6 +201,9 @@ func matchParameterizedRoute(routePath, requestPath string) (bool, map[string]st
 	if greedy {
 		// Match all but the last (greedy) route segment
 		for i := 0; i < len(routeSegments)-1; i++ {
+			if i >= len(requestSegments) {
+				return false, nil
+			}
 			routeSeg := routeSegments[i]
 			reqSeg := requestSegments[i]
 
@@ -222,6 +231,9 @@ func matchParameterizedRoute(routePath, requestPath string) (bool, map[string]st
 
 	// Non-greedy: Iterate over request segments; any remaining route segments must be optional
 	for i, reqSeg := range requestSegments {
+		if i >= len(routeSegments) {
+			return false, nil
+		}
 		routeSeg := routeSegments[i]
 
 		if len(routeSeg) > 0 && routeSeg[0] == ':' {

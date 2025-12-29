@@ -15,9 +15,15 @@ func BuildMiddlewareChain(handler http.Handler, middlewares []MiddlewareInterfac
 // The slices are processed in reverse order, with the first slice's middlewares being the outermost.
 // Within each slice, middlewares are applied in reverse order to maintain the correct execution sequence.
 func BuildMiddlewareChainFromSlices(handler http.Handler, middlewareSlices ...[]MiddlewareInterface) http.Handler {
+	if middlewareSlices == nil {
+		return handler
+	}
 	// Process slices in reverse order (first slice is outermost)
 	for i := len(middlewareSlices) - 1; i >= 0; i-- {
 		slice := middlewareSlices[i]
+		if slice == nil {
+			continue
+		}
 		// Process middlewares in reverse order (last middleware in slice is outermost)
 		for j := len(slice) - 1; j >= 0; j-- {
 			handler = slice[j].Execute(handler)
