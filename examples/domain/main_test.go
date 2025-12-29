@@ -20,32 +20,32 @@ func TestDomainRouting(t *testing.T) {
 	// Add routes to the API domain
 	apiDomain.AddRoute(rtr.Get("/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	}))
 
 	apiDomain.AddRoute(rtr.Get("/users", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`["user1", "user2"]`))
+		_, _ = w.Write([]byte(`["user1", "user2"]`))
 	}))
 
 	// Add routes to the admin domain
 	adminDomain.AddRoute(rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		w.Write([]byte(`<title>Admin Panel</title>`))
+		_, _ = w.Write([]byte(`<title>Admin Panel</title>`))
 	}))
 
 	// Add catch-all route for API domain
 	apiDomain.AddRoute(rtr.Get("/*", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "Not Found", "message": "The requested resource was not found on this server"}`))
+		_, _ = w.Write([]byte(`{"error": "Not Found", "message": "The requested resource was not found on this server"}`))
 	}))
 
 	// Add catch-all route for Admin domain
 	adminDomain.AddRoute(rtr.Get("/*", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`<title>404 Not Found</title>`))
+		_, _ = w.Write([]byte(`<title>404 Not Found</title>`))
 	}))
 
 	// Add domains to the router

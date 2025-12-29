@@ -21,7 +21,7 @@ func main() {
 	// Add a root route with links to static files
 	router.AddRoute(rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, `<!DOCTYPE html>
+		_, _ = fmt.Fprint(w, `<!DOCTYPE html>
 <html>
 <head>
     <title>Static File Server Example</title>

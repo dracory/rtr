@@ -29,7 +29,7 @@ func TestMiddleware(t *testing.T) {
 	// Test the middleware execution
 	handler := mw.Execute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	}))
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -107,7 +107,7 @@ func TestMiddlewareConversion(t *testing.T) {
 	// Test the converted middleware
 	handler := mw2.Execute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	}))
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -155,7 +155,7 @@ func TestMiddlewaresConversion(t *testing.T) {
 	// Test execution of converted middlewares
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	})
 
 	// Apply middlewares in reverse order to test chaining
@@ -165,7 +165,7 @@ func TestMiddlewaresConversion(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-	
+
 	// Reset execution order before serving
 	executionOrder = nil
 	handler.ServeHTTP(w, req)
@@ -229,7 +229,7 @@ func TestMiddlewareChain(t *testing.T) {
 	// Create a chain: mw1 -> mw2 -> mw3 -> final handler
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	})
 
 	// Chain the middlewares in reverse order
@@ -279,7 +279,7 @@ func BenchmarkMiddleware(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		handler.ServeHTTP(w, req)
-		w.Result().Body.Close()
+		_ = w.Result().Body.Close()
 	}
 }
 

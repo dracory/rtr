@@ -140,7 +140,7 @@ func registerHandlers(registry *rtr.HandlerRegistry) {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
 				w.WriteHeader(http.StatusMethodNotAllowed)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
 				return
 			}
 
@@ -151,7 +151,7 @@ func registerHandlers(registry *rtr.HandlerRegistry) {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response)
 		})
 	registry.AddRoute(usersCreateRoute)
 
@@ -226,7 +226,7 @@ func registerMiddleware(registry *rtr.HandlerRegistry) {
 				auth := r.Header.Get("Authorization")
 				if auth == "" {
 					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "Authorization required"})
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": "Authorization required"})
 					return
 				}
 				next.ServeHTTP(w, r)
@@ -256,7 +256,7 @@ func registerMiddleware(registry *rtr.HandlerRegistry) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Header.Get("Content-Type") != "application/json" {
 					w.WriteHeader(http.StatusBadRequest)
-					json.NewEncoder(w).Encode(map[string]string{"error": "Content-Type must be application/json"})
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": "Content-Type must be application/json"})
 					return
 				}
 				next.ServeHTTP(w, r)
@@ -273,7 +273,7 @@ func registerMiddleware(registry *rtr.HandlerRegistry) {
 				adminToken := r.Header.Get("X-Admin-Token")
 				if adminToken != "admin-secret-token" {
 					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "Admin access required"})
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": "Admin access required"})
 					return
 				}
 				next.ServeHTTP(w, r)

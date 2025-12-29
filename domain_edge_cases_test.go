@@ -101,7 +101,7 @@ func TestDomainRoutingEdgeCases(t *testing.T) {
 	domain := rtr.NewDomain("api.example.com")
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("domain handler"))
+		_, _ = w.Write([]byte("domain handler"))
 	}
 
 	domain.AddRoute(rtr.NewRoute().

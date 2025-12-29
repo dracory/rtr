@@ -65,7 +65,7 @@ func TestMiddlewareChaining(t *testing.T) {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	}
 
 	for _, tc := range tests {
@@ -119,7 +119,7 @@ func TestMiddlewareAbort(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				middlewareCalls = append(middlewareCalls, name)
 				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte("access denied"))
+				_, _ = w.Write([]byte("access denied"))
 				// Don't call next.ServeHTTP to abort the chain
 			})
 		}
@@ -182,7 +182,7 @@ func TestAfterMiddleware(t *testing.T) {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	}
 
 	r.AddRoute(rtr.NewRoute().

@@ -115,7 +115,7 @@ func setupTestRouter() rtr.RouterInterface {
 
 	// Add a simple route
 	r.AddRoute(rtr.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
+		_, _ = w.Write([]byte("Hello, World!"))
 	}))
 
 	// Create an API group
@@ -124,7 +124,7 @@ func setupTestRouter() rtr.RouterInterface {
 	// Add routes to the API group
 	api.AddRoute(rtr.Get("/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status": "ok"}`))
+		_, _ = w.Write([]byte(`{"status": "ok"}`))
 	}))
 
 	// Create a users group with nested routes
@@ -132,12 +132,12 @@ func setupTestRouter() rtr.RouterInterface {
 
 	// Add user routes
 	users.AddRoute(rtr.Get("", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("List of users"))
+		_, _ = w.Write([]byte("List of users"))
 	}))
 
 	// Example of a specific user route (exact match required)
 	users.AddRoute(rtr.Get("/123", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User ID: 123"))
+		_, _ = w.Write([]byte("User ID: 123"))
 	}))
 
 	// Add the users group to the API group

@@ -80,7 +80,7 @@ func TestRecoveryMiddleware_EdgeCases(t *testing.T) {
 		// Write to response before panic
 		panicHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Partial"))
+			_, _ = w.Write([]byte("Partial"))
 			panic("test panic after write")
 		})
 
@@ -105,7 +105,7 @@ func TestRecoveryMiddleware_EdgeCases(t *testing.T) {
 				defer func() {
 					if r := recover(); r != nil {
 						w.WriteHeader(http.StatusBadGateway)
-						w.Write([]byte("Custom Error"))
+						_, _ = w.Write([]byte("Custom Error"))
 					}
 				}()
 				next.ServeHTTP(w, r)

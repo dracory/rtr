@@ -30,7 +30,7 @@ func TestRouterWithDataHandling(t *testing.T) {
 			for _, user := range users {
 				response += fmt.Sprintf("User %v: %v (%v)\n", user["id"], user["name"], user["email"])
 			}
-			fmt.Fprint(w, response)
+			_, _ = fmt.Fprint(w, response)
 		})
 	r.AddRoute(route)
 
@@ -91,7 +91,7 @@ func TestRouterWithDataMiddleware(t *testing.T) {
 			for _, item := range items {
 				response += fmt.Sprintf("Item %v: %v\n", item["id"], item["name"])
 			}
-			fmt.Fprint(w, response)
+			_, _ = fmt.Fprint(w, response)
 		})
 	r.AddRoute(route)
 
@@ -145,7 +145,7 @@ func TestRouterWithMultipleRouteOperations(t *testing.T) {
 		for _, product := range products {
 			response += fmt.Sprintf("Product %v: %v ($%.2f)\n", product["id"], product["name"], product["price"])
 		}
-		fmt.Fprint(w, response)
+		_, _ = fmt.Fprint(w, response)
 	}))
 
 	productGroup.AddRoute(rtr.NewRoute().SetMethod("GET").SetPath("/total").SetHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +156,7 @@ func TestRouterWithMultipleRouteOperations(t *testing.T) {
 				total += price
 			}
 		}
-		fmt.Fprintf(w, "Total price: $%.2f", total)
+		_, _ = fmt.Fprintf(w, "Total price: $%.2f", total)
 	}))
 
 	// Add the group to the router

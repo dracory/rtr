@@ -200,7 +200,7 @@ func setupRoutes(r rtr.RouterInterface) {
 		SetPath("/").
 		SetHandler(func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.Write([]byte("Handler Types Example"))
+			_, _ = w.Write([]byte("Handler Types Example"))
 		}))
 
 	// Traditional Handler
@@ -209,7 +209,7 @@ func setupRoutes(r rtr.RouterInterface) {
 		SetPath("/traditional").
 		SetHandler(func(w http.ResponseWriter, req *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.Write([]byte("<h1>Welcome to RTR Router!</h1><p>This is a traditional handler.</p>"))
+			_, _ = w.Write([]byte("<h1>Welcome to RTR Router!</h1><p>This is a traditional handler.</p>"))
 		}))
 
 	// HTMLHandler
@@ -314,12 +314,12 @@ func setupRoutes(r rtr.RouterInterface) {
 			if req.URL.Query().Get("fail") == "true" {
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Header().Set("Content-Type", "application/json")
-				w.Write([]byte(`{"error": "simulated internal server error"}`))
+				_, _ = w.Write([]byte(`{"error": "simulated internal server error"}`))
 				return fmt.Errorf("simulated internal server error")
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"message": "Success! No error occurred.", "status": "ok"}`))
+			_, _ = w.Write([]byte(`{"message": "Success! No error occurred.", "status": "ok"}`))
 			return nil
 		}))
 
@@ -330,7 +330,7 @@ func setupRoutes(r rtr.RouterInterface) {
 		SetErrorHandler(func(w http.ResponseWriter, req *http.Request) error {
 			w.WriteHeader(http.StatusNotFound)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"error": "Resource not found", "code": 404}`))
+			_, _ = w.Write([]byte(`{"error": "Resource not found", "code": 404}`))
 			return fmt.Errorf("resource not found")
 		}))
 

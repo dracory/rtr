@@ -30,7 +30,7 @@ func main() {
 		SetPath("/").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprintf(w, `<!DOCTYPE html>
+			_, _ = fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
     <title>Path Parameters Example</title>
@@ -57,16 +57,16 @@ func main() {
     <h1>Path Parameters Example</h1>
     <p>This example demonstrates different ways to use path parameters in the router.</p>
     <div class="endpoints">`)
-			
+
 			for _, p := range paths {
-				fmt.Fprintf(w, `
+				_, _ = fmt.Fprintf(w, `
         <div class="endpoint">
             <a href="%s">%s</a>
             <p class="description">%s</p>
         </div>`, p.path, p.path, p.description)
 			}
 
-			fmt.Fprint(w, `
+			_, _ = fmt.Fprint(w, `
     </div>
 </body>
 </html>`)
@@ -78,7 +78,7 @@ func main() {
 		SetPath("/users/:id").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			id := rtr.MustGetParam(r, "id")
-			fmt.Fprintf(w, "User ID: %s", id)
+			_, _ = fmt.Fprintf(w, "User ID: %s", id)
 		}))
 
 	// Multiple parameters example
@@ -88,7 +88,7 @@ func main() {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			postID := rtr.MustGetParam(r, "postID")
 			commentID := rtr.MustGetParam(r, "commentID")
-			fmt.Fprintf(w, "Post ID: %s, Comment ID: %s", postID, commentID)
+			_, _ = fmt.Fprintf(w, "Post ID: %s, Comment ID: %s", postID, commentID)
 		}))
 
 	// Optional parameter example
@@ -98,9 +98,9 @@ func main() {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			category := rtr.MustGetParam(r, "category")
 			if id, exists := rtr.GetParam(r, "id"); exists {
-				fmt.Fprintf(w, "Category: %s, Article ID: %s", category, id)
+				_, _ = fmt.Fprintf(w, "Category: %s, Article ID: %s", category, id)
 			} else {
-				fmt.Fprintf(w, "Category: %s (no article ID provided)", category)
+				_, _ = fmt.Fprintf(w, "Category: %s (no article ID provided)", category)
 			}
 		}))
 
@@ -110,7 +110,7 @@ func main() {
 		SetPath("/profile/:username/posts/:postID").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			params := rtr.GetParams(r)
-			fmt.Fprintf(w, "All parameters: %v", params)
+			_, _ = fmt.Fprintf(w, "All parameters: %v", params)
 		}))
 
 	// Start the server

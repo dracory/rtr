@@ -29,7 +29,7 @@ func TestList(t *testing.T) {
 		SetPath("/").
 		SetName("Home").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Home"))
+			_, _ = w.Write([]byte("Home"))
 		}))
 
 	router.AddRoute(rtr.NewRoute().
@@ -37,7 +37,7 @@ func TestList(t *testing.T) {
 		SetPath("/users").
 		SetName("Create User").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("User created"))
+			_, _ = w.Write([]byte("User created"))
 		}))
 
 	// Add a route group
@@ -47,7 +47,7 @@ func TestList(t *testing.T) {
 		SetPath("/users").
 		SetName("List Users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Users list"))
+			_, _ = w.Write([]byte("Users list"))
 		}))
 
 	// Add middleware to the group
@@ -68,7 +68,7 @@ func TestList(t *testing.T) {
 		SetPath("/admin").
 		SetName("Admin Panel").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Admin"))
+			_, _ = w.Write([]byte("Admin"))
 		}))
 
 	router.AddDomain(domain)

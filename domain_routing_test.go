@@ -85,7 +85,7 @@ func TestDomainRouting(t *testing.T) {
 			// Add a test route to the domain
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
+				_, _ = w.Write([]byte("OK"))
 			}
 
 			domain.AddRoute(rtr.NewRoute().
@@ -129,7 +129,7 @@ func TestDomainRoutingWithGroups(t *testing.T) {
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("v1 users"))
+			_, _ = w.Write([]byte("v1 users"))
 		}))
 
 	// Create version 2 group
@@ -139,7 +139,7 @@ func TestDomainRoutingWithGroups(t *testing.T) {
 		SetPath("/users").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("v2 users"))
+			_, _ = w.Write([]byte("v2 users"))
 		}))
 
 	// Add groups to domain
@@ -208,7 +208,7 @@ func TestDomainRoutingWithMiddleware(t *testing.T) {
 		SetPath("/secure").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("secure content"))
+			_, _ = w.Write([]byte("secure content"))
 		}))
 
 	r.AddDomain(domain)

@@ -27,7 +27,7 @@ func appendReversed(dst []MiddlewareInterface, src []MiddlewareInterface) []Midd
 //   - A standard Handler function that writes the returned string to the response.
 func ToStdHandler(handler StringHandler) StdHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(handler(w, r)))
+		_, _ = w.Write([]byte(handler(w, r)))
 	}
 }
 
@@ -44,7 +44,7 @@ func ErrorHandlerToHandler(handler ErrorHandler) StdHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := handler(w, r)
 		if err != nil {
-			w.Write([]byte(err.Error()))
+			_, _ = w.Write([]byte(err.Error()))
 		}
 	}
 }

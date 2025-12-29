@@ -17,7 +17,7 @@ func TestGetHeadMiddleware(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("X-Test", "test-value")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("response body"))
+			_, _ = w.Write([]byte("response body"))
 		})
 
 		req := httptest.NewRequest("HEAD", "/test", nil)

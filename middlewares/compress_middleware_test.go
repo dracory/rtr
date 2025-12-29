@@ -15,7 +15,7 @@ func TestCompressMiddleware(t *testing.T) {
 		// Create a test handler that returns some content
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/plain")
-			w.Write([]byte("test response content"))
+			_, _ = w.Write([]byte("test response content"))
 		})
 
 		// Create middleware with default compression level
@@ -58,7 +58,7 @@ func TestCompressMiddleware(t *testing.T) {
 
 	t.Run("does not compress when client does not accept gzip", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("test response content"))
+			_, _ = w.Write([]byte("test response content"))
 		})
 
 		// Create middleware with default compression level
@@ -93,7 +93,7 @@ func TestCompressMiddleware(t *testing.T) {
 		// Test handler that sets content type
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{"message":"test"}`))
+			_, _ = w.Write([]byte(`{"message":"test"}`))
 		})
 
 		// Create middleware that only compresses JSON
@@ -117,7 +117,7 @@ func TestCompressMiddleware(t *testing.T) {
 		t.Run("does not compress when content type does not match", func(t *testing.T) {
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "text/plain")
-				w.Write([]byte("test"))
+				_, _ = w.Write([]byte("test"))
 			})
 
 			req := httptest.NewRequest("GET", "http://example.com/api", nil)

@@ -20,7 +20,7 @@ func TestRouterBasicRouting(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello, World!")
+			_, _ = fmt.Fprint(w, "Hello, World!")
 		})
 	r.AddRoute(route)
 
@@ -59,7 +59,7 @@ func TestRouterMethodNotAllowed(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello, World!")
+			_, _ = fmt.Fprint(w, "Hello, World!")
 		})
 	r.AddRoute(route)
 
@@ -92,7 +92,7 @@ func TestRouterNotFound(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello, World!")
+			_, _ = fmt.Fprint(w, "Hello, World!")
 		})
 	r.AddRoute(route)
 
@@ -125,7 +125,7 @@ func TestRouterWithPrefix(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello, API!")
+			_, _ = fmt.Fprint(w, "Hello, API!")
 		})
 	r.AddRoute(route)
 
@@ -167,7 +167,7 @@ func TestRouterWithGroup(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello from group!")
+			_, _ = fmt.Fprint(w, "Hello from group!")
 		})
 	group.AddRoute(route)
 
@@ -215,7 +215,7 @@ func TestRouterWithNestedGroups(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello from nested group!")
+			_, _ = fmt.Fprint(w, "Hello from nested group!")
 		})
 	childGroup.AddRoute(route)
 
@@ -271,7 +271,7 @@ func TestRouterWithBeforeMiddleware(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello with middleware!")
+			_, _ = fmt.Fprint(w, "Hello with middleware!")
 		})
 	r.AddRoute(route)
 
@@ -328,7 +328,7 @@ func TestRouterWithAfterMiddleware(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello with after middleware!")
+			_, _ = fmt.Fprint(w, "Hello with after middleware!")
 		})
 	r.AddRoute(route)
 
@@ -372,7 +372,7 @@ func TestRouterWithRouteMiddleware(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello with route middleware!")
+			_, _ = fmt.Fprint(w, "Hello with route middleware!")
 		})
 
 	// Add middleware to the route
@@ -439,7 +439,7 @@ func TestRouterWithGroupMiddleware(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/hello").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "Hello with group middleware!")
+			_, _ = fmt.Fprint(w, "Hello with group middleware!")
 		})
 	group.AddRoute(route)
 
@@ -528,35 +528,35 @@ func TestRouterHTTPMethods(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "GET method")
+			_, _ = fmt.Fprint(w, "GET method")
 		}))
 
 	r.AddRoute(rtr.NewRoute().
 		SetMethod("POST").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "POST method")
+			_, _ = fmt.Fprint(w, "POST method")
 		}))
 
 	r.AddRoute(rtr.NewRoute().
 		SetMethod("PUT").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "PUT method")
+			_, _ = fmt.Fprint(w, "PUT method")
 		}))
 
 	r.AddRoute(rtr.NewRoute().
 		SetMethod("DELETE").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "DELETE method")
+			_, _ = fmt.Fprint(w, "DELETE method")
 		}))
 
 	r.AddRoute(rtr.NewRoute().
 		SetMethod("PATCH").
 		SetPath("/method").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, "PATCH method")
+			_, _ = fmt.Fprint(w, "PATCH method")
 		}))
 
 	r.AddRoute(rtr.NewRoute().

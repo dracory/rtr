@@ -175,7 +175,7 @@ func TestHandlerPriority(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/test").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Standard Handler"))
+			_, _ = w.Write([]byte("Standard Handler"))
 		}).
 		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
 			return "<h1>HTML Handler</h1>"

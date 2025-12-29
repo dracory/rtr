@@ -19,7 +19,7 @@ import (
 type standardController struct{}
 
 func (c *standardController) Handler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Standard Controller Response"))
+	_, _ = w.Write([]byte("Standard Controller Response"))
 }
 
 type htmlController struct{}
@@ -180,7 +180,7 @@ func TestControllerPriority(t *testing.T) {
 		SetMethod("GET").
 		SetPath("/test").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("Direct Handler"))
+			_, _ = w.Write([]byte("Direct Handler"))
 		}).
 		SetController(controller)
 

@@ -15,50 +15,50 @@ func TestPathParameters(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		method        string
-		path          string
+		method         string
+		path           string
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "GET /users/123",
-			method:        http.MethodGet,
-			path:          "/users/123",
+			method:         http.MethodGet,
+			path:           "/users/123",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "User ID: 123",
 		},
 		{
 			name:           "GET /posts/456/comments/789",
-			method:        http.MethodGet,
-			path:          "/posts/456/comments/789",
+			method:         http.MethodGet,
+			path:           "/posts/456/comments/789",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "Post ID: 456, Comment ID: 789",
 		},
 		{
 			name:           "GET /articles/tech/101",
-			method:        http.MethodGet,
-			path:          "/articles/tech/101",
+			method:         http.MethodGet,
+			path:           "/articles/tech/101",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "Category: tech, Article ID: 101",
 		},
 		{
 			name:           "GET /articles/tech (optional ID)",
-			method:        http.MethodGet,
-			path:          "/articles/tech",
+			method:         http.MethodGet,
+			path:           "/articles/tech",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "Category: tech (no article ID provided)",
 		},
 		{
 			name:           "GET /profile/john/posts/42 (all params)",
-			method:        http.MethodGet,
-			path:          "/profile/john/posts/42",
+			method:         http.MethodGet,
+			path:           "/profile/john/posts/42",
 			expectedStatus: http.StatusOK,
 			expectedBody:   "All parameters: map[postID:42 username:john]",
 		},
 		{
 			name:           "GET /nonexistent",
-			method:        http.MethodGet,
-			path:          "/nonexistent",
+			method:         http.MethodGet,
+			path:           "/nonexistent",
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "404 page not found\n",
 		},
@@ -100,7 +100,7 @@ func setupTestRouter() rtr.RouterInterface {
 		SetPath("/users/:id").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			id := rtr.MustGetParam(r, "id")
-			fmt.Fprintf(w, "User ID: %s", id)
+			_, _ = fmt.Fprintf(w, "User ID: %s", id)
 		}))
 
 	// Multiple parameters example
@@ -110,7 +110,7 @@ func setupTestRouter() rtr.RouterInterface {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			postID := rtr.MustGetParam(r, "postID")
 			commentID := rtr.MustGetParam(r, "commentID")
-			fmt.Fprintf(w, "Post ID: %s, Comment ID: %s", postID, commentID)
+			_, _ = fmt.Fprintf(w, "Post ID: %s, Comment ID: %s", postID, commentID)
 		}))
 
 	// Optional parameter example
@@ -120,9 +120,9 @@ func setupTestRouter() rtr.RouterInterface {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			category := rtr.MustGetParam(r, "category")
 			if id, exists := rtr.GetParam(r, "id"); exists {
-				fmt.Fprintf(w, "Category: %s, Article ID: %s", category, id)
+				_, _ = fmt.Fprintf(w, "Category: %s, Article ID: %s", category, id)
 			} else {
-				fmt.Fprintf(w, "Category: %s (no article ID provided)", category)
+				_, _ = fmt.Fprintf(w, "Category: %s (no article ID provided)", category)
 			}
 		}))
 
@@ -132,7 +132,7 @@ func setupTestRouter() rtr.RouterInterface {
 		SetPath("/profile/:username/posts/:postID").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			params := rtr.GetParams(r)
-			fmt.Fprintf(w, "All parameters: %v", params)
+			_, _ = fmt.Fprintf(w, "All parameters: %v", params)
 		}))
 
 	return r

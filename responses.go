@@ -9,40 +9,40 @@ func HTMLResponse(w http.ResponseWriter, r *http.Request, body string) {
 	if contentType == "" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	}
-	w.Write([]byte(body))
+	_, _ = w.Write([]byte(body))
 }
 
 // JSONResponse responds with JSON content and sets the appropriate Content-Type header.
 // It sets the Content-Type to "application/json".
 func JSONResponse(w http.ResponseWriter, r *http.Request, body string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(body))
+	_, _ = w.Write([]byte(body))
 }
 
 // CSSResponse responds with CSS content and sets the appropriate Content-Type header.
 // It sets the Content-Type to "text/css".
 func CSSResponse(w http.ResponseWriter, r *http.Request, body string) {
 	w.Header().Set("Content-Type", "text/css")
-	w.Write([]byte(body))
+	_, _ = w.Write([]byte(body))
 }
 
 // XMLResponse responds with XML content and sets the appropriate Content-Type header.
 // It sets the Content-Type to "application/xml".
 func XMLResponse(w http.ResponseWriter, r *http.Request, body string) {
 	w.Header().Set("Content-Type", "application/xml")
-	w.Write([]byte(body))
+	_, _ = w.Write([]byte(body))
 }
 
 // TextResponse responds with plain text content and sets the appropriate Content-Type header.
 // It sets the Content-Type to "text/plain; charset=utf-8".
 func TextResponse(w http.ResponseWriter, r *http.Request, body string) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Write([]byte(body))
+	_, _ = w.Write([]byte(body))
 }
 
 // JSResponse responds with JavaScript content and sets the appropriate Content-Type header.
 // It sets the Content-Type to "application/javascript".
 func JSResponse(w http.ResponseWriter, r *http.Request, body string) {
 	w.Header().Set("Content-Type", "application/javascript")
-	w.Write([]byte(body))
+	_, _ = w.Write([]byte(body))
 }

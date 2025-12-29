@@ -15,7 +15,7 @@ func main() {
 	// Root route with web interface listing all available endpoints
 	r.AddRoute(rtr.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, `<!DOCTYPE html>
+		_, _ = fmt.Fprint(w, `<!DOCTYPE html>
 <html>
 <head>
     <title>Basic Router Example</title>
@@ -67,7 +67,7 @@ func main() {
 
 	// Add a simple route using shortcut method
 	r.AddRoute(rtr.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
+		_, _ = fmt.Fprintf(w, "Hello, World!")
 	}))
 
 	// Create an API group
@@ -75,7 +75,7 @@ func main() {
 
 	// Add routes to the API group
 	api.AddRoute(rtr.Get("/status", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `{"status": "ok"}`)
+		_, _ = fmt.Fprintf(w, `{"status": "ok"}`)
 	}))
 
 	// Add the API group to the router
@@ -86,12 +86,12 @@ func main() {
 
 	// Add user routes
 	users.AddRoute(rtr.Get("", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "List of users")
+		_, _ = fmt.Fprintf(w, "List of users")
 	}))
 
 	users.AddRoute(rtr.Get("/:id", func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Path[len("/users/"):]
-		fmt.Fprintf(w, "User ID: %s", id)
+		_, _ = fmt.Fprintf(w, "User ID: %s", id)
 	}))
 
 	// Add the users group to the API group
