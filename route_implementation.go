@@ -231,9 +231,7 @@ func (r *routeImpl) GetHandler() StdHandler {
 		return func(w http.ResponseWriter, req *http.Request) {
 			staticDir := r.staticHandler(w, req)
 			urlPrefix := r.path
-			if strings.HasSuffix(urlPrefix, "/*") {
-				urlPrefix = strings.TrimSuffix(urlPrefix, "/*")
-			}
+			urlPrefix = strings.TrimSuffix(urlPrefix, "/*")
 			StaticFileServer(staticDir, urlPrefix)(w, req)
 		}
 	}
@@ -601,9 +599,7 @@ func GetStatic(path string, handler StaticHandler) RouteInterface {
 func GetStaticFS(path string, fsys fs.FS) RouteInterface {
 	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetHandler(func(w http.ResponseWriter, r *http.Request) {
 		urlPrefix := path
-		if strings.HasSuffix(urlPrefix, "/*") {
-			urlPrefix = strings.TrimSuffix(urlPrefix, "/*")
-		}
+		urlPrefix = strings.TrimSuffix(urlPrefix, "/*")
 		StaticFileServerFS(fsys, urlPrefix)(w, r)
 	})
 }
