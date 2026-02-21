@@ -10,7 +10,19 @@ A high-performance, flexible, and feature-rich HTTP router for Go applications w
 [![Go version](https://img.shields.io/github/go-mod/go-version/dracory/rtr)](https://github.com/dracory/rtr)
 [![codecov](https://codecov.io/gh/dracory/rtr/branch/main/graph/badge.svg)](https://codecov.io/gh/dracory/rtr)
 
-## Features
+## Why RTR?
+
+| Feature | RTR | httprouter | chi | gorilla |
+|---------|-----|-------------|-----|---------|
+| Middleware chains | ✅ | ❌ | ✅ | ✅ |
+| Domain routing | ✅ | ❌ | ❌ | ❌ |
+| Route groups | ✅ | Limited | ✅ | ✅ |
+| Declarative config | ✅ | ❌ | ❌ | ❌ |
+| Multiple handler types | ✅ | ❌ | ❌ | ❌ |
+| Nested groups | ✅ | ❌ | ✅ | ✅ |
+| Path parameters | ✅ | ✅ | ✅ | ✅ |
+
+## Key Features
 
 - **High Performance**: Optimized for speed with minimal allocations
 - **RESTful Routing**: Intuitive API for defining RESTful endpoints
