@@ -3,6 +3,7 @@ package middlewares
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -25,13 +26,31 @@ func TestSecurityHeadersMiddleware_DefaultConfig(t *testing.T) {
 		"X-Content-Type-Options":    "nosniff",
 		"X-XSS-Protection":          "1; mode=block",
 		"Referrer-Policy":           "strict-origin-when-cross-origin",
-		"Permissions-Policy":        "geolocation=(), microphone=(), camera=()",
 	}
 
 	for header, expectedValue := range expectedHeaders {
 		actualValue := rr.Header().Get(header)
 		if actualValue != expectedValue {
 			t.Errorf("Expected %s header to be %s, got %s", header, expectedValue, actualValue)
+		}
+	}
+
+	// Check Permissions-Policy header (order may vary due to map iteration)
+	permissionsPolicy := rr.Header().Get("Permissions-Policy")
+	expectedPermissions := []string{"geolocation=()", "microphone=()", "camera=()"}
+
+	// Split and check each expected permission is present
+	actualPermissions := strings.Split(permissionsPolicy, ", ")
+	for _, expected := range expectedPermissions {
+		found := false
+		for _, actual := range actualPermissions {
+			if strings.TrimSpace(actual) == expected {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected Permissions-Policy to contain %s, got %s", expected, permissionsPolicy)
 		}
 	}
 
