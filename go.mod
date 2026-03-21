@@ -1,6 +1,6 @@
 module github.com/dracory/rtr
 
-go 1.25
+go 1.26
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/go-chi/httprate v0.15.0
-	github.com/mattn/go-runewidth v0.0.20 // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
+	github.com/mattn/go-runewidth v0.0.21 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 )
