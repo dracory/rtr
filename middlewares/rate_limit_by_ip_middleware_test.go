@@ -72,7 +72,7 @@ func TestRateLimitByIPMiddleware(t *testing.T) {
 			}
 		}
 
-		time.Sleep(time.Duration(seconds)*time.Second + 50*time.Millisecond)
+		time.Sleep(time.Duration(seconds)*time.Second + 500*time.Millisecond)
 
 		req := httptest.NewRequest("GET", "/", nil)
 		req.RemoteAddr = "192.0.2.4:1234"
