@@ -169,6 +169,148 @@ customTimeout := middlewares.TimeoutWithConfig(middlewares.TimeoutConfig{
 })
 ```
 
+## Auth Middleware
+
+The auth middleware reads a session key from a cookie, resolves the session and user from their respective stores (with optional TTL memory cache), and injects both into the request context for downstream handlers.
+
+### Required Config
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `SessionStore` | `AuthSessionStore` | Session lookup by key |
+| `UserStore` | `AuthUserStore` | User lookup by ID |
+| `ContextKeyUser` | `any` | Context key for storing the authenticated user |
+| `ContextKeySession` | `any` | Context key for storing the session object |
+| `CookieName` | `string` | Name of the cookie containing the session key |
+
+Optional fields: `Logger` (error logging), `MemoryCache` (TTL cache for session/user objects).
+
+If any required field is missing, the middleware returns HTTP 500 on every request with a descriptive error message.
+
+### Usage
+
+```go
+import (
+    "github.com/dracory/rtr"
+    "github.com/dracory/rtr/middlewares"
+)
+
+authMw := middlewares.AuthMiddleware(middlewares.AuthMiddlewareConfig{
+    SessionStore:      mySessionStore,
+    UserStore:         myUserStore,
+    ContextKeyUser:    contextKeyUser,
+    ContextKeySession: contextKeySession,
+    CookieName:        "session_key",
+    Logger:            myLogger,
+    MemoryCache:       ttlcache.New[string, any](),
+})
+
+router.AddBeforeMiddlewares([]rtr.MiddlewareInterface{authMw})
+```
+
+### Caching
+
+When `MemoryCache` is provided, sessions and users are cached with a 5-minute TTL. On a cache miss, the middleware fetches from the store and caches the result. Expired sessions are never cached — the expiry check runs before the cache write.
+
+### Interfaces
+
+```go
+type AuthSessionStore interface {
+    SessionFindByKey(ctx context.Context, key string) (AuthSession, error)
+}
+
+type AuthSession interface {
+    GetUserID() string
+    IsExpired() bool
+}
+
+type AuthUserStore interface {
+    UserFindByID(ctx context.Context, id string) (AuthUser, error)
+}
+
+type AuthUser interface {
+    IsActive() bool
+    IsAdministrator() bool
+    IsSuperuser() bool
+    IsRegistrationCompleted() bool
+}
+```
+
+## User Middleware
+
+The user middleware enforces authentication, active status, registration completion, and optional role checks. It expects the user to already be in the request context (typically set by the auth middleware).
+
+### Required Config
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `GetUser` | `func(r *http.Request) UserMiddlewareUser` | Extracts the user from the request context |
+
+Optional fields: `RegistrationEnabled`, `RegistrationPaths`, `RequireRoles`, and callback functions (`OnNotAuthenticated`, `OnNotActive`, `OnRegistrationIncomplete`, `OnNotAuthorized`).
+
+If `GetUser` is nil, the middleware returns HTTP 500 on every request with a descriptive error message.
+
+### Usage
+
+```go
+import (
+    "github.com/dracory/rtr"
+    "github.com/dracory/rtr/middlewares"
+)
+
+userMw := middlewares.UserMiddleware(middlewares.UserMiddlewareConfig{
+    GetUser: func(r *http.Request) middlewares.UserMiddlewareUser {
+        return middlewares.GetUserFromContext(r.Context())
+    },
+    RegistrationEnabled: true,
+    RegistrationPaths:   []string{"/profile", "/register"},
+    OnNotAuthenticated:  redirectToLogin,
+    OnNotActive:         redirectToHome,
+    OnRegistrationIncomplete: redirectToRegister,
+})
+
+router.AddBeforeMiddlewares([]rtr.MiddlewareInterface{userMw})
+```
+
+### Role-Based Access Control
+
+Set `RequireRoles` to enforce that the user has at least one of the specified roles. The user type must implement `UserWithRole` (which extends `UserMiddlewareUser` with `HasRole(role string) bool`).
+
+```go
+userMw := middlewares.UserMiddleware(middlewares.UserMiddlewareConfig{
+    GetUser:      getUserFromContext,
+    RequireRoles: []string{"admin", "superuser"},
+    OnNotAuthorized: func(w http.ResponseWriter, r *http.Request) {
+        http.Error(w, "Forbidden", http.StatusForbidden)
+    },
+})
+```
+
+### Interfaces
+
+```go
+type UserMiddlewareUser interface {
+    IsActive() bool
+    IsRegistrationCompleted() bool
+}
+
+type UserWithRole interface {
+    UserMiddlewareUser
+    HasRole(role string) bool
+}
+```
+
+### Callbacks
+
+Each check has an optional callback. When a callback is nil, a default HTTP error response is used:
+
+| Check | Callback | Default Response |
+|-------|----------|-----------------|
+| Not authenticated | `OnNotAuthenticated` | 401 Unauthorized |
+| Not active | `OnNotActive` | 403 Forbidden |
+| Registration incomplete | `OnRegistrationIncomplete` | 403 Forbidden |
+| Missing required role | `OnNotAuthorized` | 403 Forbidden |
+
 ## Domain Redirect Middleware
 
 ### WWW → Naked Domain
