@@ -24,8 +24,8 @@ func TestWwwToNakedDomainMiddleware_RedirectsWww(t *testing.T) {
 		t.Fatalf("next handler should not be called on www host")
 	}
 
-	if rr.Code != http.StatusTemporaryRedirect {
-		t.Fatalf("expected status %d, got %d", http.StatusTemporaryRedirect, rr.Code)
+	if rr.Code != http.StatusPermanentRedirect {
+		t.Fatalf("expected status %d, got %d", http.StatusPermanentRedirect, rr.Code)
 	}
 
 	wantLocation := "https://example.com/some/path?x=1"

@@ -24,7 +24,7 @@ func WwwToNakedDomainMiddleware() rtr.MiddlewareInterface {
 					targetHost := strings.TrimPrefix(r.Host, "www.")
 					redirectURL := scheme + "://" + targetHost + r.URL.RequestURI()
 
-					http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+					http.Redirect(w, r, redirectURL, http.StatusPermanentRedirect)
 					return
 				}
 
