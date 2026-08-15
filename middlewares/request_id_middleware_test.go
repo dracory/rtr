@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/dracory/rtr/middlewares"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 func TestRequestIDMiddleware(t *testing.T) {
@@ -15,10 +14,10 @@ func TestRequestIDMiddleware(t *testing.T) {
 		// Print all context keys for debugging
 		ctx := r.Context()
 		t.Logf("Context values: %+v", ctx)
-		
-		// Try to get the request ID using Chi's key
-		reqID := ctx.Value(chimiddleware.RequestIDKey)
-		if reqID == nil {
+
+		// Try to get the request ID using the package's getter
+		reqID := middlewares.GetRequestID(ctx)
+		if reqID == "" {
 			http.Error(w, "Request ID not found in context", http.StatusInternalServerError)
 			return
 		}

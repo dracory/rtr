@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/dracory/rtr/middlewares"
-	"github.com/go-chi/cors"
 )
 
 func TestCORSMiddleware(t *testing.T) {
@@ -27,9 +26,41 @@ func TestCORSMiddleware(t *testing.T) {
 		resp := w.Result()
 		defer resp.Body.Close()
 
-		// Check CORS headers
+		// DefaultCORSMiddleware has AllowCredentials: true, so the spec forbids
+		// the wildcard "*". The middleware must echo the request's Origin instead.
+		if origin := resp.Header.Get("Access-Control-Allow-Origin"); origin != "http://example.com" {
+			t.Errorf("Expected Access-Control-Allow-Origin: %q, got %q", "http://example.com", origin)
+		}
+		if creds := resp.Header.Get("Access-Control-Allow-Credentials"); creds != "true" {
+			t.Errorf("Expected Access-Control-Allow-Credentials: %q, got %q", "true", creds)
+		}
+	})
+
+	t.Run("uses wildcard origin when credentials are disabled", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		middleware := middlewares.CORSMiddleware(middlewares.CORSOptions{
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+			AllowCredentials: false,
+		})
+
+		req := httptest.NewRequest("GET", "http://example.com/api", nil)
+		req.Header.Set("Origin", "http://example.com")
+		w := httptest.NewRecorder()
+
+		middleware.GetHandler()(handler).ServeHTTP(w, req)
+
+		resp := w.Result()
+		defer resp.Body.Close()
+
 		if origin := resp.Header.Get("Access-Control-Allow-Origin"); origin != "*" {
 			t.Errorf("Expected Access-Control-Allow-Origin: %q, got %q", "*", origin)
+		}
+		if creds := resp.Header.Get("Access-Control-Allow-Credentials"); creds != "" {
+			t.Errorf("Expected no Access-Control-Allow-Credentials, got %q", creds)
 		}
 	})
 
@@ -57,9 +88,10 @@ func TestCORSMiddleware(t *testing.T) {
 			t.Fatalf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 		}
 
-		// Should have CORS headers
-		if origin := resp.Header.Get("Access-Control-Allow-Origin"); origin != "*" {
-			t.Errorf("Expected Access-Control-Allow-Origin: *, got %q", origin)
+		// DefaultCORSMiddleware has AllowCredentials: true, so the spec forbids
+		// the wildcard "*". The middleware must echo the request's Origin instead.
+		if origin := resp.Header.Get("Access-Control-Allow-Origin"); origin != "http://example.com" {
+			t.Errorf("Expected Access-Control-Allow-Origin: %q, got %q", "http://example.com", origin)
 		}
 
 		headers := map[string]string{
@@ -81,7 +113,7 @@ func TestCORSMiddleware(t *testing.T) {
 
 		// Create middleware with custom CORS options
 		middleware := middlewares.CORSMiddleware(
-			cors.Options{
+			middlewares.CORSOptions{
 				AllowedOrigins:   []string{"https://example.com"},
 				AllowedMethods:   []string{"GET", "POST"},
 				AllowedHeaders:   []string{"Content-Type"},
