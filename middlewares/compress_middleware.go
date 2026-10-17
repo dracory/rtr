@@ -270,7 +270,6 @@ func (cw *compressResponseWriter) isCompressible() bool {
 // WriteHeader sets the Content-Encoding header if the response is compressible.
 func (cw *compressResponseWriter) WriteHeader(code int) {
 	if cw.wroteHeader {
-		cw.ResponseWriter.WriteHeader(code)
 		return
 	}
 	cw.wroteHeader = true
