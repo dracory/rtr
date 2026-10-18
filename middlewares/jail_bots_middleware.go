@@ -144,7 +144,7 @@ func (m *jailBotsMiddleware) isJailable(path string) (jailable bool, reason stri
 	startsWithList := m.startsWithBlacklistedUriList()
 
 	for i := 0; i < len(startsWithList); i++ {
-		if strings.HasPrefix(path, startsWithList[i]) {
+		if hasPathPrefix(path, startsWithList[i]) {
 			return true, "starts with " + startsWithList[i]
 		}
 	}
@@ -152,12 +152,67 @@ func (m *jailBotsMiddleware) isJailable(path string) (jailable bool, reason stri
 	containsList := m.containsBlacklistedUriList()
 
 	for i := 0; i < len(containsList); i++ {
-		if strings.Contains(path, containsList[i]) {
+		if isJailableMatch(path, containsList[i]) {
 			return true, "contains " + containsList[i]
 		}
 	}
 
 	return false, ""
+}
+
+// isJailableMatch reports whether a path matches a blacklist entry.
+//
+// Bare alphanumeric tokens (e.g. "bc", "wp", "db", "main") are only
+// jailable when they appear as a whole path segment — bots probe paths
+// like /bc or /wp/foo, but substring matching would jail innocent URLs
+// such as /s/5c8272**bc**... (random share IDs). Tokens containing
+// punctuation ("/", ".", "(", "?", "$", "-", "_", " ") are already
+// self-anchored signatures and match as plain substrings.
+func isJailableMatch(path, token string) bool {
+	if isBareSegmentToken(token) {
+		want := strings.TrimPrefix(token, "/")
+		for _, seg := range strings.Split(path, "/") {
+			if seg == want {
+				return true
+			}
+		}
+		return false
+	}
+	return strings.Contains(path, token)
+}
+
+// hasPathPrefix reports whether path starts with prefix on a non-alphanumeric
+// boundary, so "/wp" matches "/wp", "/wp/foo", and "/wp-admin", while "/bc"
+// does not false-positive on root-level GUIDs like "/bc840000-e29b-...".
+func hasPathPrefix(path, prefix string) bool {
+	if !strings.HasPrefix(path, prefix) {
+		return false
+	}
+	if len(path) == len(prefix) || !isAlphaNum(prefix[len(prefix)-1]) {
+		return true
+	}
+	return !isAlphaNum(path[len(prefix)])
+}
+
+// isBareSegmentToken reports whether a blacklist token is a plain
+// alphanumeric segment name (letters/digits only, at most one leading
+// slash which is stripped). Anything containing other characters is a
+// self-anchored signature and should match as a substring.
+func isBareSegmentToken(token string) bool {
+	t := strings.TrimPrefix(token, "/")
+	if t == "" {
+		return false
+	}
+	for i := 0; i < len(t); i++ {
+		if !isAlphaNum(t[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isAlphaNum(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
 }
 
 // isExcludedPath returns true for routes that should bypass jail logic entirely.

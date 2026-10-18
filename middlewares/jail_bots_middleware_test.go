@@ -43,6 +43,97 @@ func TestJailBotsMiddleware(t *testing.T) {
 			expectedBody:   "OK",
 			config:         JailBotsConfig{Exclude: []string{"wp"}},
 		},
+		{
+			// Regression: bare tokens like "bc" must match whole path
+			// segments only, or random share IDs containing "bc" jail
+			// legitimate users (Answy /s/{share_id} result cards).
+			name:           "Random ID containing blacklist token should pass",
+			path:           "/s/5c82727170e14b0d1ebc25d789262056",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Bot probe path with bare token segment should jail",
+			path:           "/bc/backup.php",
+			expectedStatus: http.StatusForbidden,
+			expectedBody:   "malicious access not allowed (jb)",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Bare token inside a longer segment should pass",
+			path:           "/abc/defg",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Signature token should still jail as substring",
+			path:           "/x/../.env",
+			expectedStatus: http.StatusForbidden,
+			expectedBody:   "malicious access not allowed (jb)",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Slash-prefixed bare token in subpath should jail",
+			path:           "/x/main",
+			expectedStatus: http.StatusForbidden,
+			expectedBody:   "malicious access not allowed (jb)",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Standard hyphenated GUID in subpath should pass",
+			path:           "/s/550e8400-e29b-41d4-a716-446655440000",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "GUID containing hex blacklist tokens (bc, db) in subpath should pass",
+			path:           "/s/bc840000-db9b-41d4-a716-4466554400bc",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Root-level GUID starting with bc should pass",
+			path:           "/bc840000-db9b-41d4-a716-4466554400bc",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Uppercase GUID should pass",
+			path:           "/s/BC840000-DB9B-41D4-A716-4466554400BC",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			// SafeShortID uses 14-char vowel-free Base16 ("0123456789bcdfgh")
+			// which frequently contains "bc" and "db" substrings.
+			name:           "uid.SafeShortID containing bc and db in subpath should pass",
+			path:           "/s/05fh88bcdb9f8h",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			name:           "Root-level uid.SafeShortID starting with bc should pass",
+			path:           "/bc05fh88gd139f",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
+		{
+			// ShortID uses 11-char lowercase Crockford Base32, which can
+			// contain "bc", "bk", "db", "wp" substrings.
+			name:           "uid.ShortID containing wp and bk should pass",
+			path:           "/s/sa4wp789bkg",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+			config:         JailBotsConfig{},
+		},
 	}
 
 	for _, tt := range tests {
